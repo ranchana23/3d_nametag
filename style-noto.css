@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap');
+
+
+
+:root {
+    --bg: #FFF6F6;
+    --line: #E3E6F5;
+    --primary: #7EC4FF;      /* ฟ้า */
+    --accent: #FFB7B2;      /* ชมพู */
+    --secondary: #FFD36E;   /* เหลือง */
+    --highlight: #E9E3FF;   /* ม่วงอ่อน */
+    --contrast: #FF8C42;    /* ส้ม */
+    --shadow: 0 2px 8px rgba(126,196,255,0.10);
+}
+
+
+body {
+    font-family: 'Noto Sans Thai', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: 100vh;
+}
+
+
+aside {
+    padding: 18px 16px 14px 16px;
+    border-right: 1px solid var(--line);
+    background: #fff;
+    box-shadow: var(--shadow);
+    overflow: auto;
+}
+
+main {
+    position: relative;
+    background: var(--bg);
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    background: #fff;
+}
+
+h1 {
+    font-size: 20px;
+    margin: 0 0 18px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.5px;
+}
+
+
+
+fieldset {
+    border: 1.5px solid var(--primary);
+    border-radius: 16px;
+    padding: 16px 14px 12px 14px;
+    margin: 18px 0;
+    background: var(--highlight);
+    box-shadow: 0 1px 8px rgba(126,196,255,0.08);
+    color: #333333;
+}
+
+
+
+legend {
+    padding: 0 10px;
+    font-weight: 700;
+    color: #333333;
+    font-size: 16px;
+    background: var(--accent);
+    border-radius: 8px;
+    letter-spacing: 1px;
+}
+
+
+
+label {
+    display: block;
+    font-size: 14px;
+    margin: 10px 0 4px;
+    color: #333333;
+    font-weight: 500;
+}
+
+
+input[type="text"],
+input[type="number"],
+select {
+    width: calc(100% - 8px);
+    padding: 10px 12px;
+    border: 1.5px solid var(--contrast);
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Noto Sans Thai', sans-serif;
+    background: #fff;
+    color: #333333;
+    box-shadow: 0 1px 4px rgba(255,183,178,0.07);
+    margin-bottom: 10px;
+    margin-top: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+input:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--secondary);
+    outline: none;
+}
+input[type="file"] {
+    width: 100%;
+    font-size: 14px;
+    border: none;
+    background: none;
+    box-shadow: none;
+}
+
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+
+
+.btn {
+    width: 100%;
+    padding: 13px 0;
+    border-radius: 12px;
+    border: none;
+    background: var(--contrast);
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255,140,66,0.10);
+    transition: background 0.2s;
+}
+.btn.secondary {
+    background: var(--primary);
+    color: #fff;
+}
+.btn:hover {
+    background: var(--accent);
+    color: var(--contrast);
+}
+.btn.secondary:hover {
+    background: var(--contrast);
+    color: #fff;
+}
+
+
+
+.muted {
+    color: var(--accent);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+
+
+::-webkit-scrollbar {
+    width: 8px;
+    background: var(--accent);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--contrast);
+    border-radius: 8px;
+}
