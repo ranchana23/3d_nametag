@@ -2,6 +2,7 @@
 import * as THREE from 'https://esm.sh/three@0.168.0';
 import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/controls/OrbitControls.js';
 import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters/STLExporter.js';
+import { ThreeMFExporter } from './3MFExporter.js';
 import { SVGLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/SVGLoader.js';
 import * as BufferGeometryUtils from 'https://esm.sh/three@0.168.0/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -645,6 +646,48 @@ function resize() {
     }
 }
 renderer.setAnimationLoop(() => { resize(); renderer.render(scene, camera); });
+
+// Viewport controls
+function setCameraView(view) {
+    // คำนวณ centroid จาก baseMesh/textMesh
+    const tempGroup = new THREE.Group();
+    if (baseMesh) tempGroup.add(baseMesh.clone());
+    if (textMesh) tempGroup.add(textMesh.clone());
+    const box = new THREE.Box3().setFromObject(tempGroup);
+    tempGroup.clear();
+    if (!isFinite(box.min.x) || !isFinite(box.max.x)) return;
+    const centroid = box.getCenter(new THREE.Vector3());
+    const sizeVec = box.getSize(new THREE.Vector3());
+    const size = sizeVec.length();
+    let pos = { x: centroid.x, y: centroid.y, z: centroid.z };
+    switch(view) {
+        case 'top':
+            pos.z += size;
+            break;
+        case 'bottom':
+            pos.z -= size;
+            break;
+        case 'front':
+            pos.y -= size;
+            break;
+        case 'back':
+            pos.y += size;
+            break;
+        case 'side':
+            pos.x += size;
+            break;
+        default:
+            pos.z += size;
+    }
+    camera.position.set(pos.x, pos.y, pos.z);
+    controls.target.copy(centroid);
+    controls.update();
+}
+document.querySelectorAll('#viewport-controls button').forEach(btn => {
+    btn.addEventListener('click', e => {
+        setCameraView(btn.dataset.view);
+    });
+});
 // ===== Style UI toggle =====
 function applyStyleUI() {
     const style = document.querySelector('#style')?.value || 'raised';
@@ -717,6 +760,52 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ';
+    }
+});
+
+// เพิ่ม event สำหรับ export 3MF
+document.querySelector('#export3MF').addEventListener('click', () => {
+    try {
+        if (!baseMesh && !textMesh) {
+            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก (ลองกด Refresh ก่อน)';
+            return;
+        }
+        const hasVerts = (geom) =>
+            geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
+        const geoms = [];
+        if (baseMesh?.geometry && hasVerts(baseMesh.geometry)) {
+            geoms.push(baseMesh.geometry.clone());
+        }
+        if (textMesh?.geometry && hasVerts(textMesh.geometry)) {
+            geoms.push(textMesh.geometry.clone());
+        }
+        if (geoms.length === 0) {
+            MSG.textContent = '❌ ไม่มี geometry ให้ส่งออก';
+            return;
+        }
+        const mergedForExport = BufferGeometryUtils.mergeGeometries(geoms, false);
+        if (!mergedForExport) {
+            MSG.textContent = '❌ รวมชิ้นงานไม่สำเร็จ';
+            return;
+        }
+        // ใช้ ThreeMFExporter (mock)
+        const exporter = new ThreeMFExporter();
+        const group = new THREE.Group();
+        group.add(new THREE.Mesh(mergedForExport));
+        const model = exporter.parse(group);
+        if (!model || typeof model !== 'string') {
+            MSG.textContent = '❌ 3MF export ยังไม่รองรับในเดโมนี้';
+            return;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([model], { type: 'model/3mf' }));
+        a.download = `nametag_${(document.querySelector('#text').value || 'Ranchana')}.3mf`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        MSG.textContent = '✅ ส่งออก 3MF สำเร็จ';
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = '❌ ส่งออก 3MF ไม่สำเร็จ';
     }
 });
 
