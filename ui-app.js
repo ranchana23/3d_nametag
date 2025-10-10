@@ -35,6 +35,22 @@ const grid = new THREE.GridHelper(400, 40, 0xdddddd, 0xeeeeee);
 grid.rotation.x = Math.PI / 2;
 scene.add(grid);
 
+// ฟังก์ชัน refresh scene ให้แสดงเฉพาะ mesh ที่อยู่ใน layers
+function refreshScene() {
+    // ลบ mesh ทั้งหมดที่ไม่อยู่ใน layers
+    scene.children.forEach(obj => {
+        if (obj.isMesh && !layers.some(l => l.mesh === obj)) {
+            scene.remove(obj);
+        }
+    });
+    // เพิ่ม mesh เฉพาะที่อยู่ใน layers
+    layers.forEach(l => {
+        if (!scene.children.includes(l.mesh)) {
+            scene.add(l.mesh);
+        }
+    });
+}
+
 
 // Layer system
 
@@ -49,6 +65,7 @@ function addLayer(mesh, name = "Nametag") {
     const textValue = document.querySelector('#text')?.value || '';
     layers.push({ id, name: `${name} (${textValue}) #${id}`, mesh, visible: true });
     scene.add(mesh);
+    refreshScene();
     renderLayerList();
 }
 
@@ -60,12 +77,18 @@ function renderLayerList() {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
         layerDiv.innerHTML = `
-            <span>${layer.name}</span>
+            <input type="text" class="layer-name-input" value="${layer.name}" style="width: 120px; margin-right: 8px;" />
             <button class="show-hide-btn"><i class="fa ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
             <button class="delete-btn"><i class="fa fa-trash"></i></button>
             <button class="move-up-btn"><i class="fa fa-arrow-up"></i></button>
             <button class="move-down-btn"><i class="fa fa-arrow-down"></i></button>
         `;
+        // Event: เปลี่ยนชื่อเลเยอร์
+        const nameInput = layerDiv.querySelector('.layer-name-input');
+        nameInput.addEventListener('change', (e) => {
+            layer.name = e.target.value;
+            renderLayerList();
+        });
     // ...existing code...
 // Raycaster for mesh selection
 const raycaster = new THREE.Raycaster();
@@ -986,7 +1009,8 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     try {
         // Convert PNG to SVG using image-tracer-js
         MSG.textContent = '⏳ กำลังแปลง PNG เป็น SVG...';
-        const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
+    // ใช้ options 'invert' เพื่อ extrude เฉพาะส่วนดำ
+    const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2, invert:true });
         // Parse SVG and extrude using SVGLoader
         const loader = new SVGLoader();
         const svgData = loader.parse(svgString);
@@ -1017,6 +1041,7 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         const mesh = new THREE.Mesh(geometry, material);
     mesh.scale.set(scale, scale, scale);
     scene.add(mesh);
+    refreshScene();
     addLayer(mesh, 'PNG→SVG Extrude');
     // Add TransformControls for interactive scaling
     const transformControls = new TransformControls(camera, renderer.domElement);
