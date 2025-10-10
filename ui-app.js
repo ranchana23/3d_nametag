@@ -892,45 +892,27 @@ document.querySelector('#font').addEventListener('change', async (e) => {
 });
 document.querySelector('#exportSTL').addEventListener('click', () => {
     try {
-        // mesh อาจยังไม่ถูกสร้าง (กรณี refresh ล้มเหลว ฯลฯ)
-        if (!baseMesh && !textMesh) {
-            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
-            return;
-        }
-
-        const hasVerts = (geom) =>
-            geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
-
-        const geoms = [];
-        if (baseMesh?.geometry && hasVerts(baseMesh.geometry)) {
-            geoms.push(baseMesh.geometry.clone());
-        }
-        if (textMesh?.geometry && hasVerts(textMesh.geometry)) {
-            geoms.push(textMesh.geometry.clone());
-        }
-
+        // Export เฉพาะ mesh ที่อยู่ใน layers และ visible
+        const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
+        const geoms = layers.filter(l => l.visible && l.mesh?.geometry && hasVerts(l.mesh.geometry)).map(l => l.mesh.geometry.clone());
         if (geoms.length === 0) {
-            MSG.textContent = '❌ ไม่มี geometry ให้ส่งออก';
+            MSG.textContent = '❌ ไม่มี geometry ใน layers ที่ให้ส่งออก';
             return;
         }
-
         const mergedForExport = BufferGeometryUtils.mergeGeometries(geoms, false);
         if (!mergedForExport) {
             MSG.textContent = '❌ รวมชิ้นงานไม่สำเร็จ';
             return;
         }
-
         const exporter = new STLExporter();
         const mergedMeshForExport = new THREE.Mesh(mergedForExport);
         const stl = exporter.parse(mergedMeshForExport);
-
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
-        a.download = `nametag_${(document.querySelector('#text').value || 'Ranchana')}.stl`;
+        a.download = `nametag_layers.stl`;
         a.click();
         URL.revokeObjectURL(a.href);
-
-        MSG.textContent = '✅ ส่งออก STL สำเร็จ';
+        MSG.textContent = '✅ ส่งออก STL เฉพาะ layers สำเร็จ';
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ';
