@@ -1009,8 +1009,8 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     try {
         // Convert PNG to SVG using image-tracer-js
         MSG.textContent = '⏳ กำลังแปลง PNG เป็น SVG...';
-    // ใช้ options 'invert' เพื่อ extrude เฉพาะส่วนดำ
-    const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2, invert:true });
+    // ไม่ต้อง invert: วัตถุดำเป็นวัตถุ ขาวเป็นพื้นหลัง
+    const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
         // Parse SVG and extrude using SVGLoader
         const loader = new SVGLoader();
         const svgData = loader.parse(svgString);
@@ -1020,15 +1020,16 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         // กรอง shape ที่เป็น background (ขอบแผ่น)
         if (shapes.length > 1) {
             // คำนวณพื้นที่ shape ทั้งหมด
-            const maxArea = Math.max(...shapes.map(sh => Math.abs(THREE.ShapeUtils.area(sh.getPoints()))));
-            // เลือก shape หลัก (พื้นที่มากสุด)
-            shapes = shapes.filter(s => Math.abs(THREE.ShapeUtils.area(s.getPoints())) === maxArea);
+            const areas = shapes.map(sh => Math.abs(THREE.ShapeUtils.area(sh.getPoints())));
+            const maxArea = Math.max(...areas);
+            // ข้าม shape ที่เป็น background (พื้นที่มากสุด)
+            shapes = shapes.filter((s, i) => areas[i] < maxArea * 0.99); // เฉพาะวัตถุ ไม่ใช่ background
         }
         if (shapes.length === 0) {
             MSG.textContent = '❌ ไม่พบรูปร่างใน SVG';
             return;
         }
-        // extrude เฉพาะ shape หลัก (ที่มี holes อยู่ใน shape)
+        // extrude เฉพาะ shape วัตถุ (ดอกไม้)
         const geometry = new THREE.ExtrudeGeometry(shapes, {
             depth: extrudeDepth,
             bevelEnabled: false,
@@ -1039,16 +1040,16 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         geometry.translate(0, 0, 0);
         const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
         const mesh = new THREE.Mesh(geometry, material);
-    mesh.scale.set(scale, scale, scale);
-    scene.add(mesh);
-    refreshScene();
-    addLayer(mesh, 'PNG→SVG Extrude');
-    // Add TransformControls for interactive scaling
-    const transformControls = new TransformControls(camera, renderer.domElement);
-    transformControls.attach(mesh);
-    transformControls.setMode('translate');
-    scene.add(transformControls);
-    MSG.textContent = '✅ เพิ่ม PNG Extrude ในเฟรมแล้ว (ปรับขนาดได้ในเฟรม)';
+        mesh.scale.set(scale, scale, scale);
+        scene.add(mesh);
+        refreshScene();
+        addLayer(mesh, 'PNG→SVG Extrude');
+        // Add TransformControls for interactive scaling
+        const transformControls = new TransformControls(camera, renderer.domElement);
+        transformControls.attach(mesh);
+        transformControls.setMode('translate');
+        scene.add(transformControls);
+        MSG.textContent = '✅ เพิ่ม PNG Extrude ในเฟรมแล้ว (ปรับขนาดได้ในเฟรม)';
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ เพิ่ม PNG Extrude ไม่สำเร็จ';
