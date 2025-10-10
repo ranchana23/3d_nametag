@@ -1,0 +1,21 @@
+{
+  "name": "tag3d_project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "3MFExporter.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx live-server --open=index.html --port=3000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ranchana23/3d_nametag.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ranchana23/3d_nametag/issues"
+  },
+  "homepage": "https://github.com/ranchana23/3d_nametag#readme"
+}

@@ -706,7 +706,45 @@ document.querySelector('#style').addEventListener('input', () => {
 
 
 // Events
-document.querySelector('#refresh').addEventListener('click', refresh);
+document.querySelector('#add').addEventListener('click', async () => {
+    try {
+        const { textGeom, baseGeom } = await buildGeometries();
+        const c = cfg();
+        scaleToTargetWidth(baseGeom, textGeom, c.totalWidth);
+        centerPair(baseGeom, textGeom);
+
+        // helper: เช็คว่า geometry มีจุดจริงไหม
+        const hasVerts = (g) => g && g.attributes && g.attributes.position && g.attributes.position.count > 0;
+
+        // สร้าง base mesh (ต้องมีเสมอ)
+        const newBaseMesh = new THREE.Mesh(
+            baseGeom,
+            new THREE.MeshStandardMaterial({
+                color: new THREE.Color(c.baseColor),
+                metalness: 0.0,
+                roughness: 0.9
+            })
+        );
+        scene.add(newBaseMesh);
+
+        // สำหรับ raised: มี textGeom; สำหรับ cutout: textGeom อาจว่าง -> ข้าม
+        if (hasVerts(textGeom)) {
+            const newTextMesh = new THREE.Mesh(
+                textGeom,
+                new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(c.textColor),
+                    metalness: 0.0,
+                    roughness: 0.7
+                })
+            );
+            scene.add(newTextMesh);
+        }
+        MSG.textContent = '✅ เพิ่ม nametag ในเฟรมแล้ว';
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = 'มีข้อผิดพลาดตอนเพิ่ม nametag (ดู Console)';
+    }
+});
 document.querySelectorAll('input,select').forEach(el => {
     el.addEventListener('input', () => { if (el.id !== 'font') refresh(); });
 });
