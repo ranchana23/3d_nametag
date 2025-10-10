@@ -431,33 +431,32 @@ async function buildGeometries() {
             return polygonToShape(ptsFU);
         });
         if (c.earEnabled) {
-            const rHole = c.holeDiameter * 0.5;
-            const rHoleFU = rHole / c.mmPerUnit;
+            // Always use mm for ear/hole features, not affected by scaling
+            const rHoleMM = c.holeDiameter * 0.5;
+            const rOuterMM = rHoleMM + c.earRingThickness;
+            const yCenterMM = ((minY + maxY) / 2) * c.mmPerUnit + c.earYShift;
+            const attachMM = c.earAttachOverlap;
+            const cxMM = (c.earSide === 'right')
+                ? ((maxX * c.mmPerUnit) + rOuterMM - attachMM)
+                : ((minX * c.mmPerUnit) - rOuterMM + attachMM);
 
             if ((c.earPlacement || 'side') === 'side') {
                 // ---------- แบบเดิม: หูด้านข้าง ----------
-                const rOuter = rHole + c.earRingThickness;
-                const rOuterFU = rOuter / c.mmPerUnit;
-                const yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
-                const attachFU = c.earAttachOverlap / c.mmPerUnit;
-                const cxFU = (c.earSide === 'right')
-                    ? (maxX + rOuterFU - attachFU)
-                    : (minX - rOuterFU + attachFU);
-
+                // Scale all coordinates from mm to FU before creating shape
+                const scale = 1 / c.mmPerUnit;
                 const earShape = new THREE.Shape();
-                earShape.absarc(cxFU, yCenterFU, rOuterFU, 0, Math.PI * 2, false);
+                earShape.absarc(cxMM * scale, yCenterMM * scale, rOuterMM * scale, 0, Math.PI * 2, false);
                 const earHole = new THREE.Path();
-                earHole.absarc(cxFU, yCenterFU, rHoleFU, 0, Math.PI * 2, false);
+                earHole.absarc(cxMM * scale, yCenterMM * scale, rHoleMM * scale, 0, Math.PI * 2, false);
                 earShape.holes.push(earHole);
                 baseShapes.push(earShape);
             } else {
                 // ---------- ใหม่: เจาะรู "ในกรอบ" ----------
-                const wallFU = (c.earRingThickness / c.mmPerUnit) || 0; // ใช้เป็นระยะห่างจากขอบ
-                const yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
-                const cxFU = (c.earSide === 'right')
-                    ? (maxX - wallFU - rHoleFU)
-                    : (minX + wallFU + rHoleFU);
-
+                const scale = 1 / c.mmPerUnit;
+                const wallMM = c.earRingThickness;
+                const cxMM2 = (c.earSide === 'right')
+                    ? ((maxX * c.mmPerUnit) - wallMM - rHoleMM)
+                    : ((minX * c.mmPerUnit) + wallMM + rHoleMM);
                 // เจาะรูลงใน shape หลัก: เลือก shape ที่มีพื้นที่มากสุด (มักเป็นชิ้นนอก)
                 let targetShape = baseShapes[0];
                 if (baseShapes.length > 1) {
@@ -466,7 +465,7 @@ async function buildGeometries() {
                     );
                 }
                 const inner = new THREE.Path();
-                inner.absarc(cxFU, yCenterFU, rHoleFU, 0, Math.PI * 2, false);
+                inner.absarc(cxMM2 * scale, yCenterMM * scale, rHoleMM * scale, 0, Math.PI * 2, false);
                 targetShape.holes.push(inner);
             }
         }
