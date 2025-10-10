@@ -998,10 +998,9 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     const scaleInput = document.querySelector('#pngExtrudeScale');
     const file = fileInput.files?.[0];
     let extrudeDepth = parseFloat(depthInput.value) || 2;
-    let scale = parseFloat(scaleInput.value) || 1;
-    // Convert scale and depth from mm to cm
-    extrudeDepth = extrudeDepth / 10;
-    scale = scale / 10;
+    // scale PNG mesh ด้วย mmPerUnit และ scale จาก input
+    const mmPerUnit = parseFloat(document.querySelector('#mmPerUnit').value) || 0.25;
+    const scaleInputValue = parseFloat(scaleInput.value) || 1;
     if (!file) {
         MSG.textContent = '❌ กรุณาเลือกไฟล์ PNG ขาวดำก่อน';
         return;
@@ -1039,8 +1038,8 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         geometry.computeVertexNormals();
         geometry.translate(0, 0, 0);
         const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.scale.set(scale, scale, scale);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.set(mmPerUnit * scaleInputValue, mmPerUnit * scaleInputValue, mmPerUnit * scaleInputValue);
         scene.add(mesh);
         refreshScene();
         addLayer(mesh, 'PNG→SVG Extrude');
