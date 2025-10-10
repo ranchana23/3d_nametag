@@ -62,23 +62,38 @@ function renderLayerList() {
             <button class="delete-btn"><i class="fa fa-trash"></i></button>
             <button class="move-up-btn"><i class="fa fa-arrow-up"></i></button>
             <button class="move-down-btn"><i class="fa fa-arrow-down"></i></button>
-            <button class="select-transform-btn">เลือกแก้ไข</button>
         `;
-        // Direct manipulation: add TransformControls when "เลือกแก้ไข" is clicked
-        layerDiv.querySelector('.select-transform-btn').addEventListener('click', function() {
-            if (window.currentTransform) {
-                scene.remove(window.currentTransform);
-                window.currentTransform.dispose();
-                window.currentTransform = null;
-            }
-            const tc = new TransformControls(camera, renderer.domElement);
-            tc.attach(layer.mesh);
-            scene.add(tc);
-            window.currentTransform = tc;
-            tc.addEventListener('dragging-changed', function(e) {
-                controls.enabled = !e.value;
-            });
+    // ...existing code...
+// Raycaster for mesh selection
+const raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+canvas.addEventListener('pointerdown', function(event) {
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    // Only test visible meshes in layers
+    const meshes = layers.filter(l => l.visible).map(l => l.mesh);
+    const intersects = raycaster.intersectObjects(meshes);
+    if (intersects.length > 0) {
+        const mesh = intersects[0].object;
+        // Remove previous TransformControls
+        if (window.currentTransform) {
+            scene.remove(window.currentTransform);
+            window.currentTransform.dispose();
+            window.currentTransform = null;
+        }
+        // Attach TransformControls to selected mesh
+        const tc = new TransformControls(camera, renderer.domElement);
+        tc.attach(mesh);
+        scene.add(tc);
+        window.currentTransform = tc;
+        tc.addEventListener('dragging-changed', function(e) {
+            controls.enabled = !e.value;
         });
+    }
+});
         // Show/hide button
         layerDiv.querySelector('.show-hide-btn').addEventListener('click', function() {
             layer.visible = !layer.visible;
