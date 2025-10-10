@@ -974,9 +974,10 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     const depthInput = document.querySelector('#pngExtrudeDepth');
     const scaleInput = document.querySelector('#pngExtrudeScale');
     const file = fileInput.files?.[0];
-    const extrudeDepth = parseFloat(depthInput.value) || 2;
+    let extrudeDepth = parseFloat(depthInput.value) || 2;
     let scale = parseFloat(scaleInput.value) || 1;
-    // Convert scale from mm to cm
+    // Convert scale and depth from mm to cm
+    extrudeDepth = extrudeDepth / 10;
     scale = scale / 10;
     if (!file) {
         MSG.textContent = '❌ กรุณาเลือกไฟล์ PNG ขาวดำก่อน';
@@ -1020,7 +1021,7 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     // Add TransformControls for interactive scaling
     const transformControls = new TransformControls(camera, renderer.domElement);
     transformControls.attach(mesh);
-    transformControls.setMode('scale');
+    transformControls.setMode('translate');
     scene.add(transformControls);
     MSG.textContent = '✅ เพิ่ม PNG Extrude ในเฟรมแล้ว (ปรับขนาดได้ในเฟรม)';
     } catch (e) {
