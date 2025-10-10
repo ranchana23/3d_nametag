@@ -73,6 +73,8 @@ canvas.addEventListener('pointerdown', function(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
+    // Prevent selection if TransformControls is currently dragging
+    if (window.currentTransform && window.currentTransform.dragging) return;
     // Only test visible meshes in layers
     const meshes = layers.filter(l => l.visible).map(l => l.mesh);
     const intersects = raycaster.intersectObjects(meshes);
@@ -91,6 +93,7 @@ canvas.addEventListener('pointerdown', function(event) {
         window.currentTransform = tc;
         tc.addEventListener('dragging-changed', function(e) {
             controls.enabled = !e.value;
+            tc.dragging = e.value;
         });
     }
 });
@@ -782,6 +785,10 @@ function setCameraView(view) {
 document.querySelectorAll('#viewport-controls button').forEach(btn => {
     btn.addEventListener('click', e => {
         setCameraView(btn.dataset.view);
+        // If TransformControls is active, update its camera reference
+        if (window.currentTransform) {
+            window.currentTransform.camera = camera;
+        }
     });
 });
 // ===== Style UI toggle =====
@@ -813,7 +820,7 @@ document.querySelector('#add').addEventListener('click', async () => {
         const hasVerts = (g) => g && g.attributes && g.attributes.position && g.attributes.position.count > 0;
 
         // สร้าง base mesh (ต้องมีเสมอ)
-        const newBaseMesh = new THREE.Mesh(
+        baseMesh = new THREE.Mesh(
             baseGeom,
             new THREE.MeshStandardMaterial({
                 color: new THREE.Color(c.baseColor),
@@ -821,11 +828,11 @@ document.querySelector('#add').addEventListener('click', async () => {
                 roughness: 0.9
             })
         );
-        addLayer(newBaseMesh, "Base");
+        addLayer(baseMesh, "Base");
 
         // สำหรับ raised: มี textGeom; สำหรับ cutout: textGeom อาจว่าง -> ข้าม
         if (hasVerts(textGeom)) {
-            const newTextMesh = new THREE.Mesh(
+            textMesh = new THREE.Mesh(
                 textGeom,
                 new THREE.MeshStandardMaterial({
                     color: new THREE.Color(c.textColor),
@@ -833,7 +840,7 @@ document.querySelector('#add').addEventListener('click', async () => {
                     roughness: 0.7
                 })
             );
-            addLayer(newTextMesh, "Text");
+            addLayer(textMesh, "Text");
         }
         MSG.textContent = '✅ เพิ่ม nametag ในเฟรมแล้ว';
     } catch (e) {
@@ -854,7 +861,7 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
     try {
         // mesh อาจยังไม่ถูกสร้าง (กรณี refresh ล้มเหลว ฯลฯ)
         if (!baseMesh && !textMesh) {
-            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก (ลองกด Refresh ก่อน)';
+            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
             return;
         }
 
@@ -901,7 +908,7 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
 document.querySelector('#export3MF').addEventListener('click', () => {
     try {
         if (!baseMesh && !textMesh) {
-            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก (ลองกด Refresh ก่อน)';
+            MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
             return;
         }
         const hasVerts = (geom) =>
