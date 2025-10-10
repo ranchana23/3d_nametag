@@ -4,8 +4,11 @@ import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/control
 import { TransformControls } from './TransformControls.js';
 import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters/STLExporter.js';
 import { ThreeMFExporter } from './3MFExporter.js';
-import { SVGLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/SVGLoader.js';
+// ...existing code...
 import * as BufferGeometryUtils from 'https://esm.sh/three@0.168.0/examples/jsm/utils/BufferGeometryUtils.js';
+import { addPNGExtrudeToScene } from './png-extrude.js';
+import { pngToSVG } from './image-tracer-wrapper.js';
+import { SVGLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/SVGLoader.js';
 
 const MM_PER_UNIT_INPUT = document.querySelector('#mmPerUnit');
 const MSG = document.querySelector('#msg');
@@ -67,6 +70,7 @@ function renderLayerList() {
 // Raycaster for mesh selection
 const raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
+let currentTransform = null;
 canvas.addEventListener('pointerdown', function(event) {
     // Calculate mouse position in normalized device coordinates (-1 to +1)
     const rect = canvas.getBoundingClientRect();
@@ -74,26 +78,25 @@ canvas.addEventListener('pointerdown', function(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
     // Prevent selection if TransformControls is currently dragging
-    if (window.currentTransform && window.currentTransform.dragging) return;
+    if (currentTransform && currentTransform.dragging) return;
     // Only test visible meshes in layers
     const meshes = layers.filter(l => l.visible).map(l => l.mesh);
     const intersects = raycaster.intersectObjects(meshes);
     if (intersects.length > 0) {
         const mesh = intersects[0].object;
         // Remove previous TransformControls
-        if (window.currentTransform) {
-            scene.remove(window.currentTransform);
-            window.currentTransform.dispose();
-            window.currentTransform = null;
+        if (currentTransform) {
+            scene.remove(currentTransform);
+            currentTransform.dispose();
+            currentTransform = null;
         }
         // Attach TransformControls to selected mesh
-        const tc = new TransformControls(camera, renderer.domElement);
-        tc.attach(mesh);
-        scene.add(tc);
-        window.currentTransform = tc;
-        tc.addEventListener('dragging-changed', function(e) {
+        currentTransform = new TransformControls(camera, renderer.domElement);
+        currentTransform.attach(mesh);
+        scene.add(currentTransform);
+        currentTransform.addEventListener('dragging-changed', function(e) {
             controls.enabled = !e.value;
-            tc.dragging = e.value;
+            currentTransform.dragging = e.value;
         });
     }
 });
@@ -819,6 +822,7 @@ document.querySelector('#add').addEventListener('click', async () => {
         const hasVerts = (g) => g && g.attributes && g.attributes.position && g.attributes.position.count > 0;
 
         // สร้าง base mesh (ต้องมีเสมอ)
+        const meshProps = { position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: new THREE.Vector3(1,1,1) };
         baseMesh = new THREE.Mesh(
             baseGeom,
             new THREE.MeshStandardMaterial({
@@ -827,6 +831,10 @@ document.querySelector('#add').addEventListener('click', async () => {
                 roughness: 0.9
             })
         );
+        // preserve transform if re-adding
+        Object.assign(baseMesh.position, meshProps.position);
+        Object.assign(baseMesh.rotation, meshProps.rotation);
+        Object.assign(baseMesh.scale, meshProps.scale);
         addLayer(baseMesh, "Base");
 
         // สำหรับ raised: มี textGeom; สำหรับ cutout: textGeom อาจว่าง -> ข้าม
@@ -839,6 +847,9 @@ document.querySelector('#add').addEventListener('click', async () => {
                     roughness: 0.7
                 })
             );
+            Object.assign(textMesh.position, meshProps.position);
+            Object.assign(textMesh.rotation, meshProps.rotation);
+            Object.assign(textMesh.scale, meshProps.scale);
             addLayer(textMesh, "Text");
         }
         MSG.textContent = '✅ เพิ่ม nametag ในเฟรมแล้ว';
@@ -956,3 +967,83 @@ document.querySelector('#export3MF').addEventListener('click', () => {
 await loadDefaultFont();
 applyStyleUI();   // ✅ แสดง UI ให้ตรงกับสไตล์เริ่มต้น
 // ไม่ต้อง refresh() ตอนเริ่มต้น เพื่อไม่ให้มีเลเยอร์ default
+
+// PNG Extrude event handler
+document.querySelector('#addPngExtrude').addEventListener('click', async () => {
+    const fileInput = document.querySelector('#pngUpload');
+    const depthInput = document.querySelector('#pngExtrudeDepth');
+    const scaleInput = document.querySelector('#pngExtrudeScale');
+    const file = fileInput.files?.[0];
+    const extrudeDepth = parseFloat(depthInput.value) || 2;
+    let scale = parseFloat(scaleInput.value) || 1;
+    // Convert scale from mm to cm
+    scale = scale / 10;
+    if (!file) {
+        MSG.textContent = '❌ กรุณาเลือกไฟล์ PNG ขาวดำก่อน';
+        return;
+    }
+    try {
+        // Convert PNG to SVG using image-tracer-js
+        MSG.textContent = '⏳ กำลังแปลง PNG เป็น SVG...';
+        const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
+        // Parse SVG and extrude using SVGLoader
+        const loader = new SVGLoader();
+        const svgData = loader.parse(svgString);
+        // สร้าง shapes จาก paths
+        let shapes = [];
+        for (const p of svgData.paths) shapes.push(...SVGLoader.createShapes(p));
+        // กรอง shape ที่เป็น background (ขอบแผ่น)
+        if (shapes.length > 1) {
+            // คำนวณพื้นที่ shape ทั้งหมด
+            const maxArea = Math.max(...shapes.map(sh => Math.abs(THREE.ShapeUtils.area(sh.getPoints()))));
+            // เลือก shape หลัก (พื้นที่มากสุด)
+            shapes = shapes.filter(s => Math.abs(THREE.ShapeUtils.area(s.getPoints())) === maxArea);
+        }
+        if (shapes.length === 0) {
+            MSG.textContent = '❌ ไม่พบรูปร่างใน SVG';
+            return;
+        }
+        // extrude เฉพาะ shape หลัก (ที่มี holes อยู่ใน shape)
+        const geometry = new THREE.ExtrudeGeometry(shapes, {
+            depth: extrudeDepth,
+            bevelEnabled: false,
+            steps: 1,
+            curveSegments: 24
+        });
+        geometry.computeVertexNormals();
+        geometry.translate(0, 0, 0);
+        const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.set(scale, scale, scale);
+    scene.add(mesh);
+    addLayer(mesh, 'PNG→SVG Extrude');
+    // Add TransformControls for interactive scaling
+    const transformControls = new TransformControls(camera, renderer.domElement);
+    transformControls.attach(mesh);
+    transformControls.setMode('scale');
+    scene.add(transformControls);
+    MSG.textContent = '✅ เพิ่ม PNG Extrude ในเฟรมแล้ว (ปรับขนาดได้ในเฟรม)';
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = '❌ เพิ่ม PNG Extrude ไม่สำเร็จ';
+    }
+});
+import { addSVGExtrudeToScene } from './svg-extrude.js';
+
+document.querySelector('#addSvgExtrude').addEventListener('click', async () => {
+    const fileInput = document.querySelector('#svgUpload');
+    const depthInput = document.querySelector('#svgExtrudeDepth');
+    const file = fileInput.files?.[0];
+    const extrudeDepth = parseFloat(depthInput.value) || 2;
+    if (!file) {
+        MSG.textContent = '❌ กรุณาเลือกไฟล์ SVG ก่อน';
+        return;
+    }
+    try {
+        await addSVGExtrudeToScene({ file, extrudeDepth, scene, addLayer });
+        MSG.textContent = '✅ เพิ่ม SVG Extrude ในเฟรมแล้ว';
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = '❌ เพิ่ม SVG Extrude ไม่สำเร็จ';
+    }
+});
