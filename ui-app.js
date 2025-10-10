@@ -1,6 +1,7 @@
 // ui-app.js — preview + STL export one-piece
 import * as THREE from 'https://esm.sh/three@0.168.0';
 import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from './TransformControls.js';
 import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters/STLExporter.js';
 import { ThreeMFExporter } from './3MFExporter.js';
 import { SVGLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/SVGLoader.js';
@@ -31,10 +32,90 @@ const grid = new THREE.GridHelper(400, 40, 0xdddddd, 0xeeeeee);
 grid.rotation.x = Math.PI / 2;
 scene.add(grid);
 
-// let mergedMesh = null;
-// ลบบรรทัด: let mergedMesh = null;
+
+// Layer system
+
 let baseMesh = null;
 let textMesh = null;
+let layers = [];
+let layerIdCounter = 1;
+
+function addLayer(mesh, name = "Nametag") {
+    const id = layerIdCounter++;
+    // ดึงข้อความจาก input เพื่อแสดงในชื่อเลเยอร์
+    const textValue = document.querySelector('#text')?.value || '';
+    layers.push({ id, name: `${name} (${textValue}) #${id}`, mesh, visible: true });
+    scene.add(mesh);
+    renderLayerList();
+}
+
+function renderLayerList() {
+    const list = document.getElementById("layer-list");
+    if (!list) return;
+    list.innerHTML = "";
+    layers.forEach(function(layer, idx) {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = 'layer-item';
+        layerDiv.innerHTML = `
+            <span>${layer.name}</span>
+            <button class="show-hide-btn"><i class="fa ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
+            <button class="delete-btn"><i class="fa fa-trash"></i></button>
+            <button class="move-up-btn"><i class="fa fa-arrow-up"></i></button>
+            <button class="move-down-btn"><i class="fa fa-arrow-down"></i></button>
+            <button class="select-transform-btn">เลือกแก้ไข</button>
+        `;
+        // Direct manipulation: add TransformControls when "เลือกแก้ไข" is clicked
+        layerDiv.querySelector('.select-transform-btn').addEventListener('click', function() {
+            if (window.currentTransform) {
+                scene.remove(window.currentTransform);
+                window.currentTransform.dispose();
+                window.currentTransform = null;
+            }
+            const tc = new TransformControls(camera, renderer.domElement);
+            tc.attach(layer.mesh);
+            scene.add(tc);
+            window.currentTransform = tc;
+            tc.addEventListener('dragging-changed', function(e) {
+                controls.enabled = !e.value;
+            });
+        });
+        // Show/hide button
+        layerDiv.querySelector('.show-hide-btn').addEventListener('click', function() {
+            layer.visible = !layer.visible;
+            layer.mesh.visible = layer.visible;
+            renderLayerList();
+        });
+        // Delete button
+        layerDiv.querySelector('.delete-btn').addEventListener('click', function() {
+            deleteLayer(layer.id);
+        });
+        // Move up button
+        layerDiv.querySelector('.move-up-btn').addEventListener('click', function() {
+            if (idx > 0) {
+                moveLayer(idx, idx - 1);
+            }
+        });
+        // Move down button
+        layerDiv.querySelector('.move-down-btn').addEventListener('click', function() {
+            if (idx < layers.length - 1) {
+                moveLayer(idx, idx + 1);
+            }
+        });
+        list.appendChild(layerDiv);
+    });
+// ลบเลเยอร์ออกจาก scene/layers
+function deleteLayer(id) {
+    const idx = layers.findIndex(l => l.id === id);
+    if (idx !== -1) {
+        const layer = layers[idx];
+        if (layer.mesh && layer.mesh.parent) {
+            layer.mesh.parent.remove(layer.mesh);
+        }
+        layers.splice(idx, 1);
+        renderLayerList();
+    }
+}
+}
 
 
 // Config
@@ -725,7 +806,7 @@ document.querySelector('#add').addEventListener('click', async () => {
                 roughness: 0.9
             })
         );
-        scene.add(newBaseMesh);
+        addLayer(newBaseMesh, "Base");
 
         // สำหรับ raised: มี textGeom; สำหรับ cutout: textGeom อาจว่าง -> ข้าม
         if (hasVerts(textGeom)) {
@@ -737,7 +818,7 @@ document.querySelector('#add').addEventListener('click', async () => {
                     roughness: 0.7
                 })
             );
-            scene.add(newTextMesh);
+            addLayer(newTextMesh, "Text");
         }
         MSG.textContent = '✅ เพิ่ม nametag ในเฟรมแล้ว';
     } catch (e) {
@@ -850,6 +931,7 @@ document.querySelector('#export3MF').addEventListener('click', () => {
 
 
 // Start
+
 await loadDefaultFont();
 applyStyleUI();   // ✅ แสดง UI ให้ตรงกับสไตล์เริ่มต้น
-await refresh();
+// ไม่ต้อง refresh() ตอนเริ่มต้น เพื่อไม่ให้มีเลเยอร์ default

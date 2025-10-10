@@ -8,6 +8,8 @@
     <!-- ใช้ฟอนต์ Noto Sans Thai และ CSS ใหม่ -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700&display=swap">
     <link rel="stylesheet" href="./style-noto.css">
+    <!-- FontAwesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 
 <body>
@@ -138,6 +140,7 @@
         </fieldset>
 
         <div class="row">
+            <input id="layerName" type="text" placeholder="Layer name" style="width:120px;margin-right:8px;" />
             <button id="add" class="btn secondary">Add</button>
             <button id="exportSTL" class="btn">Export STL</button>
             <button id="export3MF" class="btn" style="margin-top:8px;">Export 3MF</button>
@@ -147,6 +150,10 @@
 
     <main style="position:relative;">
         <canvas id="view"></canvas>
+        <div id="layer-list-panel" style="position:absolute;bottom:18px;right:18px;z-index:10;background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 8px #0002;min-width:220px;">
+            <h3 style="margin-top:0;margin-bottom:8px;font-size:1.1em;">Layers</h3>
+            <div id="layer-list"></div>
+        </div>
         <div id="viewport-controls" style="position:absolute;top:18px;right:18px;z-index:10;display:flex;gap:8px;">
             <button class="btn secondary" data-view="top" title="Top">Top</button>
             <button class="btn secondary" data-view="front" title="Front">Front</button>
