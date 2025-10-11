@@ -892,9 +892,9 @@ document.querySelector('#font').addEventListener('change', async (e) => {
 });
 document.querySelector('#exportSTL').addEventListener('click', () => {
     try {
-        // Export เฉพาะ mesh ที่อยู่ใน layers และ visible
+        // Export mesh ทุกตัวใน layers ที่มี geometry จริง
         const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
-        const geoms = layers.filter(l => l.visible && l.mesh?.geometry && hasVerts(l.mesh.geometry)).map(l => l.mesh.geometry.clone());
+        const geoms = layers.filter(l => l.mesh?.geometry && hasVerts(l.mesh.geometry)).map(l => l.mesh.geometry.clone());
         if (geoms.length === 0) {
             MSG.textContent = '❌ ไม่มี geometry ใน layers ที่ให้ส่งออก';
             return;
@@ -912,7 +912,7 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
         a.download = `nametag_layers.stl`;
         a.click();
         URL.revokeObjectURL(a.href);
-        MSG.textContent = '✅ ส่งออก STL เฉพาะ layers สำเร็จ';
+        MSG.textContent = '✅ ส่งออก STL ทุกเลเยอร์สำเร็จ';
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ';
@@ -978,33 +978,38 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     const fileInput = document.querySelector('#pngUpload');
     const depthInput = document.querySelector('#pngExtrudeDepth');
     const scaleInput = document.querySelector('#pngExtrudeScale');
+    const targetWidthInput = document.querySelector('#pngTargetWidth'); // เพิ่ม input สำหรับขนาดจริง (mm)
     const file = fileInput.files?.[0];
     let extrudeDepth = parseFloat(depthInput.value) || 2;
-    // scale PNG mesh ด้วย mmPerUnit และ scale จาก input
     const mmPerUnit = parseFloat(document.querySelector('#mmPerUnit').value) || 0.25;
     const scaleInputValue = parseFloat(scaleInput.value) || 1;
+    const targetWidthMM = parseFloat(targetWidthInput?.value) || 50; // ค่า default 50mm
     if (!file) {
         MSG.textContent = '❌ กรุณาเลือกไฟล์ PNG ขาวดำก่อน';
         return;
     }
     try {
-        // Convert PNG to SVG using image-tracer-js
         MSG.textContent = '⏳ กำลังแปลง PNG เป็น SVG...';
-    // ไม่ต้อง invert: วัตถุดำเป็นวัตถุ ขาวเป็นพื้นหลัง
-    const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
+        // อ่านขนาด PNG (pixel)
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+        });
+        const pngWidthPx = img.width;
+        // Convert PNG to SVG using image-tracer-js
+        const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
         // Parse SVG and extrude using SVGLoader
         const loader = new SVGLoader();
         const svgData = loader.parse(svgString);
-        // สร้าง shapes จาก paths
         let shapes = [];
         for (const p of svgData.paths) shapes.push(...SVGLoader.createShapes(p));
         // กรอง shape ที่เป็น background (ขอบแผ่น)
         if (shapes.length > 1) {
-            // คำนวณพื้นที่ shape ทั้งหมด
             const areas = shapes.map(sh => Math.abs(THREE.ShapeUtils.area(sh.getPoints())));
             const maxArea = Math.max(...areas);
-            // ข้าม shape ที่เป็น background (พื้นที่มากสุด)
-            shapes = shapes.filter((s, i) => areas[i] < maxArea * 0.99); // เฉพาะวัตถุ ไม่ใช่ background
+            shapes = shapes.filter((s, i) => areas[i] < maxArea * 0.99);
         }
         if (shapes.length === 0) {
             MSG.textContent = '❌ ไม่พบรูปร่างใน SVG';
@@ -1020,8 +1025,10 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         geometry.computeVertexNormals();
         geometry.translate(0, 0, 0);
         const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.scale.set(mmPerUnit * scaleInputValue, mmPerUnit * scaleInputValue, mmPerUnit * scaleInputValue);
+        const mesh = new THREE.Mesh(geometry, material);
+    // คำนวณ scale factor จาก targetWidthMM / pngWidthPx (ขนาดจริง mm)
+    const scaleFactor = targetWidthMM / pngWidthPx;
+    mesh.scale.set(scaleFactor * scaleInputValue, scaleFactor * scaleInputValue, scaleInputValue);
         scene.add(mesh);
         refreshScene();
         addLayer(mesh, 'PNG→SVG Extrude');
