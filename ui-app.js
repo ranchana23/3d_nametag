@@ -1,6 +1,24 @@
 // สร้างปุ่ม toggle และกล่อง layer-list ถ้ายังไม่มี
 window.addEventListener('DOMContentLoaded', () => {
     // ใช้ panel หลักจาก index.html id="layer-list-panel"
+    // เพิ่มปุ่ม export STL แยกแต่ละเลเยอร์ไว้ใกล้กับ id="exportSTL"
+    const exportSTLBtn = document.getElementById('exportSTL');
+    if (exportSTLBtn) {
+        let exportByLayerBtn = document.getElementById('exportSTLByLayer');
+        if (!exportByLayerBtn) {
+            exportByLayerBtn = document.createElement('button');
+            exportByLayerBtn.id = 'exportSTLByLayer';
+            exportByLayerBtn.textContent = 'Export STL (แยกเลเยอร์)';
+            exportByLayerBtn.className = 'btn';
+            exportByLayerBtn.style.marginLeft = '8px';
+            exportSTLBtn.parentNode.insertBefore(exportByLayerBtn, exportSTLBtn.nextSibling);
+        }
+        exportByLayerBtn.addEventListener('click', () => {
+            exportSTLByLayer();
+        });
+    }
+
+    // ใช้ panel หลักจาก index.html id="layer-list-panel"
     const panel = document.getElementById('layer-list-panel');
     if (panel) {
         // เพิ่มปุ่ม toggle ถ้ายังไม่มี
@@ -26,6 +44,31 @@ import { TransformControls } from './TransformControls.js';
 import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters/STLExporter.js';
 import { ThreeMFExporter } from './3MFExporter.js';
 // ...existing code...
+// ฟังก์ชัน export STL แยกแต่ละเลเยอร์
+function exportSTLByLayer() {
+    try {
+        const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
+        layers.forEach(layer => {
+            if (layer.mesh?.geometry && hasVerts(layer.mesh.geometry)) {
+                // apply matrix (scale/transform) ของ mesh ลง geometry ก่อน export
+                const geom = layer.mesh.geometry.clone();
+                geom.applyMatrix4(layer.mesh.matrixWorld);
+                const exporter = new STLExporter();
+                const meshForExport = new THREE.Mesh(geom);
+                const stl = exporter.parse(meshForExport);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
+                a.download = `layer_${layer.name.replace(/[^a-zA-Z0-9ก-๙]/g, '_')}.stl`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+        });
+        MSG.textContent = '✅ ส่งออก STL แยกแต่ละเลเยอร์สำเร็จ';
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = '❌ ส่งออก STL แยกเลเยอร์ไม่สำเร็จ';
+    }
+}
 import * as BufferGeometryUtils from 'https://esm.sh/three@0.168.0/examples/jsm/utils/BufferGeometryUtils.js';
 import { addPNGExtrudeToScene } from './png-extrude.js';
 import { pngToSVG } from './image-tracer-wrapper.js';
