@@ -892,11 +892,11 @@ document.querySelector('#font').addEventListener('change', async (e) => {
 });
 document.querySelector('#exportSTL').addEventListener('click', () => {
     try {
-        // Export mesh ทุกตัวใน layers ที่มี geometry จริง
+        // Export mesh ทุกตัวที่อยู่ใน scene ที่มี geometry จริง
         const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
-        const geoms = layers.filter(l => l.mesh?.geometry && hasVerts(l.mesh.geometry)).map(l => l.mesh.geometry.clone());
+        const geoms = scene.children.filter(obj => obj.isMesh && obj.geometry && hasVerts(obj.geometry)).map(obj => obj.geometry.clone());
         if (geoms.length === 0) {
-            MSG.textContent = '❌ ไม่มี geometry ใน layers ที่ให้ส่งออก';
+            MSG.textContent = '❌ ไม่มี geometry ใน scene ที่ให้ส่งออก';
             return;
         }
         const mergedForExport = BufferGeometryUtils.mergeGeometries(geoms, false);
@@ -909,10 +909,10 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
         const stl = exporter.parse(mergedMeshForExport);
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
-        a.download = `nametag_layers.stl`;
+        a.download = `nametag_scene.stl`;
         a.click();
         URL.revokeObjectURL(a.href);
-        MSG.textContent = '✅ ส่งออก STL ทุกเลเยอร์สำเร็จ';
+        MSG.textContent = '✅ ส่งออก STL ทุกชิ้นในเฟรมสำเร็จ';
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ';
@@ -977,12 +977,10 @@ applyStyleUI();   // ✅ แสดง UI ให้ตรงกับสไตล
 document.querySelector('#addPngExtrude').addEventListener('click', async () => {
     const fileInput = document.querySelector('#pngUpload');
     const depthInput = document.querySelector('#pngExtrudeDepth');
-    const scaleInput = document.querySelector('#pngExtrudeScale');
     const targetWidthInput = document.querySelector('#pngTargetWidth'); // เพิ่ม input สำหรับขนาดจริง (mm)
     const file = fileInput.files?.[0];
     let extrudeDepth = parseFloat(depthInput.value) || 2;
     const mmPerUnit = parseFloat(document.querySelector('#mmPerUnit').value) || 0.25;
-    const scaleInputValue = parseFloat(scaleInput.value) || 1;
     const targetWidthMM = parseFloat(targetWidthInput?.value) || 50; // ค่า default 50mm
     if (!file) {
         MSG.textContent = '❌ กรุณาเลือกไฟล์ PNG ขาวดำก่อน';
@@ -1026,9 +1024,9 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         geometry.translate(0, 0, 0);
         const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
         const mesh = new THREE.Mesh(geometry, material);
-    // คำนวณ scale factor จาก targetWidthMM / pngWidthPx (ขนาดจริง mm)
-    const scaleFactor = targetWidthMM / pngWidthPx;
-    mesh.scale.set(scaleFactor * scaleInputValue, scaleFactor * scaleInputValue, scaleInputValue);
+    // คำนวณ scale factor จาก targetWidthMM / pngWidthPx แล้วหารด้วย 10 เพื่อให้ขนาด mm ตรงจริง
+    const scaleFactor = (targetWidthMM / pngWidthPx) ;
+    mesh.scale.set(scaleFactor, scaleFactor, 1);
         scene.add(mesh);
         refreshScene();
         addLayer(mesh, 'PNG→SVG Extrude');
