@@ -1,3 +1,24 @@
+// สร้างปุ่ม toggle และกล่อง layer-list ถ้ายังไม่มี
+window.addEventListener('DOMContentLoaded', () => {
+    // ใช้ panel หลักจาก index.html id="layer-list-panel"
+    const panel = document.getElementById('layer-list-panel');
+    if (panel) {
+        // เพิ่มปุ่ม toggle ถ้ายังไม่มี
+        let toggleBtn = document.getElementById('toggle-layer-list');
+        if (!toggleBtn) {
+            toggleBtn = document.createElement('button');
+            toggleBtn.id = 'toggle-layer-list';
+            toggleBtn.textContent = 'แสดง/ซ่อน';
+            toggleBtn.style.float = 'right';
+            toggleBtn.style.marginLeft = '8px';
+            panel.querySelector('h3').appendChild(toggleBtn);
+        }
+        toggleBtn.addEventListener('click', () => {
+            const list = document.getElementById('layer-list');
+            list.style.display = (list.style.display === 'none') ? 'block' : 'none';
+        });
+    }
+});
 // ui-app.js — preview + STL export one-piece
 import * as THREE from 'https://esm.sh/three@0.168.0';
 import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/controls/OrbitControls.js';
@@ -76,19 +97,42 @@ function renderLayerList() {
     layers.forEach(function(layer, idx) {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
+        // เพิ่ม state สำหรับการแก้ไขชื่อ
+        if (!layer.editing) layer.editing = false;
         layerDiv.innerHTML = `
-            <input type="text" class="layer-name-input" value="${layer.name}" style="width: 120px; margin-right: 8px;" />
+            ${layer.editing
+                ? `<input type="text" class="layer-name-input" value="${layer.name}" style="width: 220px; margin-right: 8px;" />`
+                : `<span class="layer-name-label" style="width: 220px; margin-right: 8px; display: inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${layer.name}</span>`}
+            <button class="edit-name-btn" style="${layer.editing ? 'display:none;' : ''}"><i class="fa fa-pencil"></i></button>
+            <button class="save-name-btn" style="${layer.editing ? '' : 'display:none;'}"><i class="fa fa-check"></i></button>
             <button class="show-hide-btn"><i class="fa ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
             <button class="delete-btn"><i class="fa fa-trash"></i></button>
             <button class="move-up-btn"><i class="fa fa-arrow-up"></i></button>
             <button class="move-down-btn"><i class="fa fa-arrow-down"></i></button>
         `;
-        // Event: เปลี่ยนชื่อเลเยอร์
-        const nameInput = layerDiv.querySelector('.layer-name-input');
-        nameInput.addEventListener('change', (e) => {
-            layer.name = e.target.value;
+        // Event: กดปุ่มแก้ไขชื่อ
+        layerDiv.querySelector('.edit-name-btn').addEventListener('click', () => {
+            layer.editing = true;
             renderLayerList();
         });
+        // Event: กดปุ่มบันทึกชื่อ
+        layerDiv.querySelector('.save-name-btn').addEventListener('click', () => {
+            const nameInput = layerDiv.querySelector('.layer-name-input');
+            layer.name = nameInput.value;
+            layer.editing = false;
+            renderLayerList();
+        });
+        // Event: กด Enter เพื่อบันทึกชื่อ
+        if (layer.editing) {
+            const nameInput = layerDiv.querySelector('.layer-name-input');
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    layer.name = nameInput.value;
+                    layer.editing = false;
+                    renderLayerList();
+                }
+            });
+        }
     // ...existing code...
 // Raycaster for mesh selection
 const raycaster = new THREE.Raycaster();
