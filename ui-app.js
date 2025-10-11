@@ -894,7 +894,12 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
     try {
         // Export mesh ทุกตัวที่อยู่ใน scene ที่มี geometry จริง
         const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
-        const geoms = scene.children.filter(obj => obj.isMesh && obj.geometry && hasVerts(obj.geometry)).map(obj => obj.geometry.clone());
+        // apply matrix (scale/transform) ของ mesh ลง geometry ก่อน export
+        const geoms = scene.children.filter(obj => obj.isMesh && obj.geometry && hasVerts(obj.geometry)).map(obj => {
+            const geom = obj.geometry.clone();
+            geom.applyMatrix4(obj.matrixWorld);
+            return geom;
+        });
         if (geoms.length === 0) {
             MSG.textContent = '❌ ไม่มี geometry ใน scene ที่ให้ส่งออก';
             return;
