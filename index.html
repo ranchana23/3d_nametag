@@ -16,6 +16,10 @@
 <body>
     <aside>
         <h1>Nametag Generator by Ranchana</h1>
+        <div class="row" style="margin-bottom:16px;">
+            <button id="add" class="btn secondary">Add</button>
+            <button id="exportSTL" class="btn" style="margin-left:8px;">Export STL</button>
+        </div>
 
         <fieldset>
             <legend>ข้อความ & ฟอนต์</legend>
@@ -162,8 +166,7 @@
 
         <div class="row">
             <input id="layerName" type="text" placeholder="Layer name" style="width:120px;margin-right:8px;" />
-            <button id="add" class="btn secondary">Add</button>
-            <button id="exportSTL" class="btn">Export STL</button>
+            <button id="exportSTLByLayer" class="btn">Export STL (แยกเลเยอร์)</button>
             <button id="export3MF" class="btn" style="margin-top:8px;">Export 3MF</button>
         </div>
         <div id="msg" class="muted" style="margin-top:8px"></div>
