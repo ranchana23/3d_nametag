@@ -17,5 +17,11 @@
   "bugs": {
     "url": "https://github.com/ranchana23/3d_nametag/issues"
   },
-  "homepage": "https://github.com/ranchana23/3d_nametag#readme"
+  "homepage": "https://github.com/ranchana23/3d_nametag#readme",
+  "dependencies": {
+    "color-diff": "^1.4.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
+    "quantize": "^1.0.2"
+  }
 }

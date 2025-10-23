@@ -267,8 +267,9 @@ function cfg() {
         earAttachOverlap: parseFloat(document.querySelector('#earAttachOverlap').value) || 2.0,
         earYShift: parseFloat(document.querySelector('#earYShift').value) || 0.0,
 
-        // กว้างรวมเป้าหมาย (mm)
-        totalWidth: parseFloat(document.querySelector('#totalWidth')?.value),
+    // กว้าง/สูงรวมเป้าหมาย (mm)
+    totalWidth: parseFloat(document.querySelector('#totalWidth')?.value),
+    totalHeight: parseFloat(document.querySelector('#totalHeight')?.value),
         letterSpacing: parseFloat(document.querySelector('#letterSpacing')?.value) || 0.0,
 
         baseColor: document.querySelector('#baseColor')?.value || '#dddddd',
@@ -758,15 +759,44 @@ function scaleToTargetWidth(baseGeom, textGeom, targetWidthMM) {
         textGeom.scale(k, k, 1);
     }
 }
+function scaleToTargetHeight(baseGeom, textGeom, targetHeightMM) {
+    if (!Number.isFinite(targetHeightMM) || targetHeightMM <= 0) return;
+
+    const geoms = [];
+    if (baseGeom?.attributes?.position?.count > 0) geoms.push(baseGeom.clone());
+    if (textGeom?.attributes?.position?.count > 0) geoms.push(textGeom.clone());
+    if (geoms.length === 0) return;
+
+    const mergedTemp = BufferGeometryUtils.mergeGeometries(geoms, false);
+    const attr = mergedTemp.getAttribute('position');
+    if (!attr) return;
+
+    const box = new THREE.Box3().setFromBufferAttribute(attr);
+    const currentHeight = box.max.y - box.min.y;
+    if (currentHeight <= 0) return;
+
+    const k = targetHeightMM / currentHeight;
+
+    // สเกลเฉพาะ Y กับ X เพื่อรักษสัดส่วนแกนอื่นๆ — เราสามารถเลือกสเกลเฉพาะแกน Y แต่
+    // เพื่อให้รูปไม่บิด เลือกสเกล X และ Y เท่ากัน
+    baseGeom.scale(k, k, 1);
+    if (textGeom?.attributes?.position?.count > 0) {
+        textGeom.scale(k, k, 1);
+    }
+}
 
 
 async function refresh() {
     try {
         const { textGeom, baseGeom } = await buildGeometries();
 
-        // สเกลให้ตรงความกว้างรวม (ถ้ากำหนด)
+        // สเกลให้ตรงความกว้าง/ความสูงรวม (ถ้ามีกำหนด) — ให้ความสำคัญกับความกว้างก่อน
         const c = cfg();
-        scaleToTargetWidth(baseGeom, textGeom, c.totalWidth);
+        if (Number.isFinite(c.totalWidth) && c.totalWidth > 0) {
+            scaleToTargetWidth(baseGeom, textGeom, c.totalWidth);
+        } else if (Number.isFinite(c.totalHeight) && c.totalHeight > 0) {
+            scaleToTargetHeight(baseGeom, textGeom, c.totalHeight);
+        }
 
         // จัดให้อยู่กึ่งกลางร่วม โดย "ไม่" merge
         centerPair(baseGeom, textGeom);
@@ -826,8 +856,16 @@ async function refresh() {
             return;
         }
 
-        const sizeVec = box.getSize(new THREE.Vector3());
-        const size = sizeVec.length();
+    const sizeVec = box.getSize(new THREE.Vector3());
+    const size = sizeVec.length();
+    // ขนาดจริง (หน่วย mm) — geometries ถูกสเกลเป็น mm ตอนสร้าง
+    const widthMM = Math.max(0, box.max.x - box.min.x);
+    const heightMM = Math.max(0, box.max.y - box.min.y);
+    const depthMM = Math.max(0, box.max.z - box.min.z);
+    // ปัดทศนิยม 2 ตำแหน่ง
+    const fmt = (v) => Math.round(v * 100) / 100;
+    const dimEl = document.getElementById('dim-text');
+    if (dimEl) dimEl.textContent = `${fmt(widthMM)} * ${fmt(heightMM)} * ${fmt(depthMM)} mm`;
         const centroid = box.getCenter(new THREE.Vector3());
 
         controls.target.copy(centroid);
@@ -925,7 +963,11 @@ document.querySelector('#add').addEventListener('click', async () => {
     try {
         const { textGeom, baseGeom } = await buildGeometries();
         const c = cfg();
-        scaleToTargetWidth(baseGeom, textGeom, c.totalWidth);
+        if (Number.isFinite(c.totalWidth) && c.totalWidth > 0) {
+            scaleToTargetWidth(baseGeom, textGeom, c.totalWidth);
+        } else if (Number.isFinite(c.totalHeight) && c.totalHeight > 0) {
+            scaleToTargetHeight(baseGeom, textGeom, c.totalHeight);
+        }
         centerPair(baseGeom, textGeom);
 
         // helper: เช็คว่า geometry มีจุดจริงไหม
