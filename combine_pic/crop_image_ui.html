@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Crop PNG Transparency</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f7f7f7; }
+        .container { max-width: 500px; margin: auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px #0001; }
+        input[type=file] { margin-bottom: 16px; }
+        #preview { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .thumb { width: 80px; height: 80px; object-fit: contain; border: 1px solid #ccc; border-radius: 6px; background: #eee; }
+        #result { margin-top: 24px; }
+        button { padding: 8px 20px; border-radius: 6px; border: none; background: #0078d4; color: #fff; font-size: 16px; cursor: pointer; }
+        button:disabled { background: #aaa; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Crop PNG Transparency</h2>
+    <input type="file" id="fileInput" multiple accept="image/png">
+    <div id="preview"></div>
+    <button id="cropBtn" disabled>Crop & Download All</button>
+    <div id="progressLog" style="margin-top:10px;color:#0078d4;font-weight:bold;"></div>
+    <div id="result"></div>
+</div>
+<script>
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const cropBtn = document.getElementById('cropBtn');
+const progressLog = document.getElementById('progressLog');
+const result = document.getElementById('result');
+let images = [];
+
+fileInput.addEventListener('change', (e) => {
+    preview.innerHTML = '';
+    images = Array.from(e.target.files);
+    if (images.length > 0) {
+        cropBtn.disabled = false;
+        images.forEach(file => {
+            const img = document.createElement('img');
+            img.className = 'thumb';
+            img.src = URL.createObjectURL(file);
+            preview.appendChild(img);
+        });
+    } else {
+        cropBtn.disabled = true;
+    }
+    result.innerHTML = '';
+});
+
+function getCropBounds(imgData) {
+    // imgData: ImageData
+    const { data, width, height } = imgData;
+    let minX = width, minY = height, maxX = -1, maxY = -1;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4;
+            if (data[idx + 3] > 0) { // alpha > 0
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+    if (maxX < minX || maxY < minY) return null; // all transparent
+    return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+cropBtn.addEventListener('click', async () => {
+    result.innerHTML = '';
+    progressLog.textContent = '';
+    const zip = new JSZip();
+    let count = 0;
+    const total = images.length;
+    for (const file of images) {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = url;
+        await new Promise(res => img.onload = res);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, img.width, img.height);
+        const bounds = getCropBounds(imgData);
+        let cropCanvas = canvas;
+        if (bounds) {
+            cropCanvas = document.createElement('canvas');
+            cropCanvas.width = bounds.w;
+            cropCanvas.height = bounds.h;
+            cropCanvas.getContext('2d').putImageData(ctx.getImageData(bounds.x, bounds.y, bounds.w, bounds.h), 0, 0);
+        }
+        const name = file.name.replace(/\.png$/i, '_crop.png');
+        // แปลงเป็น blob แล้วใส่ zip
+        await new Promise(res => cropCanvas.toBlob(blob => {
+            zip.file(name, blob);
+            res();
+        }, 'image/png'));
+        count++;
+        progressLog.textContent = `Crop ${count} / ${total}`;
+    }
+    progressLog.textContent = 'กำลังสร้าง zip...';
+    // สร้าง zip และดาวน์โหลด
+    zip.generateAsync({type: 'blob'}).then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'cropped_images.zip';
+        a.textContent = 'Download cropped_images.zip';
+        result.appendChild(a);
+        a.click();
+        progressLog.textContent = 'เสร็จสิ้น!';
+    });
+});
+</script>
+</body>
+</html>
