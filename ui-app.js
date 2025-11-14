@@ -27,8 +27,34 @@ window.addEventListener('DOMContentLoaded', () => {
             toggleBtn = document.createElement('button');
             toggleBtn.id = 'toggle-layer-list';
             toggleBtn.textContent = 'แสดง/ซ่อน';
+            toggleBtn.style.fontFamily = "'Noto Sans Thai', sans-serif";
+            toggleBtn.style.fontSize = '12px';
+            toggleBtn.style.fontWeight = '600';
+            toggleBtn.style.padding = '6px 14px';
+            toggleBtn.style.background = '#696FC7';
+            toggleBtn.style.color = '#fff';
+            toggleBtn.style.border = '2px solid #A7AAE1';
+            toggleBtn.style.borderRadius = '10px';
+            toggleBtn.style.cursor = 'pointer';
+            toggleBtn.style.transition = 'all 0.2s ease';
             toggleBtn.style.float = 'right';
             toggleBtn.style.marginLeft = '8px';
+            toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
+            
+            // hover effect
+            toggleBtn.addEventListener('mouseenter', () => {
+                toggleBtn.style.background = '#F2AEBB';
+                toggleBtn.style.borderColor = '#696FC7';
+                toggleBtn.style.transform = 'translateY(-1px)';
+                toggleBtn.style.boxShadow = '0 4px 10px rgba(105,111,199,0.3)';
+            });
+            toggleBtn.addEventListener('mouseleave', () => {
+                toggleBtn.style.background = '#696FC7';
+                toggleBtn.style.borderColor = '#A7AAE1';
+                toggleBtn.style.transform = 'translateY(0)';
+                toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
+            });
+            
             panel.querySelector('h3').appendChild(toggleBtn);
         }
         toggleBtn.addEventListener('click', () => {

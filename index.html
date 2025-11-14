@@ -176,19 +176,19 @@
 
     <main style="position:relative;">
         <canvas id="view"></canvas>
-        <div id="layer-list-panel" style="position:absolute;bottom:18px;right:18px;z-index:10;background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 8px #0002;min-width:220px;">
-            <h3 style="margin-top:0;margin-bottom:8px;font-size:1.1em;">Layers</h3>
+        <div id="layer-list-panel" style="position:absolute;bottom:20px;right:20px;z-index:10;background:rgba(255,255,255,0.95);border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(105,111,199,0.15);backdrop-filter:blur(10px);min-width:240px;border:2px solid rgba(167,170,225,0.3);">
+            <h3 style="margin-top:0;margin-bottom:12px;font-size:1.1em;color:#696FC7;font-weight:700;">Layers</h3>
             <div id="layer-list"></div>
-            <div style="margin-top:8px;text-align:right;">
-                <div id="dim-text" style="display:inline-block;background:rgba(0,0,0,0.6);color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;">--</div>
+            <div style="margin-top:10px;text-align:right;">
+                <div id="dim-text" style="display:inline-block;background:linear-gradient(135deg, #696FC7, #A7AAE1);color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(105,111,199,0.2);">--</div>
             </div>
         </div>
-        <div id="viewport-controls" style="position:absolute;top:18px;right:18px;z-index:10;display:flex;gap:8px;">
-            <button class="btn secondary" data-view="top" title="Top">Top</button>
-            <button class="btn secondary" data-view="front" title="Front">Front</button>
-            <button class="btn secondary" data-view="side" title="Side">Side</button>
-            <button class="btn secondary" data-view="back" title="Back">Back</button>
-            <button class="btn secondary" data-view="bottom" title="Bottom">Bottom</button>
+        <div id="viewport-controls" style="position:absolute;top:20px;right:20px;z-index:10;display:flex;gap:12px;background:rgba(255,255,255,0.95);padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(105,111,199,0.15);backdrop-filter:blur(10px);">
+            <button class="btn secondary" data-view="top" title="Top" style="padding:10px 18px;font-size:14px;min-width:70px;">Top</button>
+            <button class="btn secondary" data-view="front" title="Front" style="padding:10px 18px;font-size:14px;min-width:70px;">Front</button>
+            <button class="btn secondary" data-view="side" title="Side" style="padding:10px 18px;font-size:14px;min-width:70px;">Side</button>
+            <button class="btn secondary" data-view="back" title="Back" style="padding:10px 18px;font-size:14px;min-width:70px;">Back</button>
+            <button class="btn secondary" data-view="bottom" title="Bottom" style="padding:10px 18px;font-size:14px;min-width:70px;">Bottom</button>
         </div>
     </main>
 
