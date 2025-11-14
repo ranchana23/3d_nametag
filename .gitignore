@@ -2,4 +2,3 @@
 /image_to_png/*.png
 /image_to_png/*.jpg
 .png
-**/node_modules/**
