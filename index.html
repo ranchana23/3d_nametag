@@ -25,9 +25,13 @@
             <legend>ข้อความ & ฟอนต์</legend>
             <label>ชื่อ (TEXT)</label>
             <input id="text" type="text" value="Ranchana" />
-            <label>ฟอนต์ (.ttf/.otf)</label>
+            <label>เลือกฟอนต์จากคลัง</label>
+            <select id="fontSelect">
+                <option value="">-- เลือกฟอนต์ --</option>
+            </select>
+            <label>หรืออัพโหลดฟอนต์เอง (.ttf/.otf)</label>
             <input id="font" type="file" accept=".ttf,.otf" />
-            <div class="muted">ถ้าไม่เลือก จะใช้ฟอนต์ตัวอย่าง</div>
+            <div class="muted">เลือกจาก dropdown หรืออัพโหลดฟอนต์ของคุณเอง</div>
         </fieldset>
         <fieldset>
             <legend>เพิ่ม PNG ขาวดำ</legend>

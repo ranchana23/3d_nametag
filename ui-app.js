@@ -456,6 +456,81 @@ async function loadDefaultFont() {
     fontBuffer = buf;
     MSG.textContent = 'ใช้ฟอนต์ Default (iann_b.ttf)';
 }
+
+// โหลดรายการฟอนต์จากโฟลเดอร์
+const FONT_LIST = [
+    // Main folder
+    'font/365PANIRotFaiDemo-Regular.ttf',
+    'font/Better.ttf',
+    'font/Butterfly.ttf',
+    'font/CkPastaDemo.ttf',
+    'font/Comfortaa-VariableFont_wght.ttf',
+    'font/DSgalileoTester.ttf',
+    'font/Elowen.ttf',
+    'font/FC Palette Color Italic.ttf',
+    'font/FC Palette Color.ttf',
+    'font/FC Palette Italic.ttf',
+    'font/FC Palette.ttf',
+    'font/GMCPopcornStrawberry Demo.ttf',
+    'font/Good Love.ttf',
+    'font/iann_b.ttf',
+    'font/iann.ttf',
+    'font/ing.ttf',
+    'font/January Payment.ttf',
+    'font/maaja ver 1.00.ttf',
+    'font/SanamDeklen_chaya.ttf',
+    'font/Spookvine.ttf',
+    'font/Stencilia-A.ttf',
+    'font/SweetHipster-PzlE.ttf',
+    'font/Various.ttf',
+    // font_free subfolder
+    'font/font_free/2005_iannnnnGMO.ttf',
+    'font/font_free/2005_iannnnnMTV.ttf',
+    'font/font_free/iannnnn-HEN-Bold.ttf',
+    'font/font_free/iannnnn-HEN-Regular.ttf',
+    'font/font_free/iannnnn-HEN-Thin.ttf',
+    'font/font_free/iannnnn-TIGER-Black.ttf',
+    'font/font_free/iannnnn-TIGER-Bold.ttf',
+    'font/font_free/iannnnn-TIGER-Regular.ttf',
+    'font/font_free/iannnnn-TIGER-Thin.ttf',
+    'font/font_free/Mali-Bold.ttf',
+    'font/font_free/Mali-Medium.ttf',
+    'font/font_free/SanamDeklen_chaya.ttf',
+    'font/font_free/WDB_Bangna.ttf',
+    // FREE subfolder
+    'font/FREE/BarberChop.otf',
+    'font/FREE/Beaver Punch.otf',
+    'font/FREE/Gokhan.ttf',
+    'font/FREE/Simanja.ttf'
+];
+
+function populateFontDropdown() {
+    const select = document.getElementById('fontSelect');
+    FONT_LIST.forEach(fontPath => {
+        const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
+        const option = document.createElement('option');
+        option.value = fontPath;
+        option.textContent = fileName;
+        select.appendChild(option);
+    });
+}
+
+async function loadFontFromPath(fontPath) {
+    try {
+        MSG.textContent = `⏳ กำลังโหลดฟอนต์ ${fontPath}...`;
+        const resp = await fetch(fontPath);
+        if (!resp.ok) throw new Error(`โหลดฟอนต์ไม่ได้ (HTTP ${resp.status})`);
+        const buf = await resp.arrayBuffer();
+        if (!isLikelyFontBuffer(buf)) throw new Error('ไฟล์ไม่ใช่ TTF/OTF');
+        fontBuffer = buf;
+        MSG.textContent = `✅ ใช้ฟอนต์: ${fontPath.split('/').pop()}`;
+        return true;
+    } catch (e) {
+        console.error(e);
+        MSG.textContent = `❌ โหลดฟอนต์ไม่สำเร็จ: ${e.message}`;
+        return false;
+    }
+}
 // รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning
 function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit) {
     const path = new opentype.Path();
@@ -1151,8 +1226,30 @@ document.querySelector('#export3MF').addEventListener('click', async () => {
 // Start
 
 await loadDefaultFont();
+populateFontDropdown(); // โหลดรายการฟอนต์ใน dropdown
 applyStyleUI();   // ✅ แสดง UI ให้ตรงกับสไตล์เริ่มต้น
 // ไม่ต้อง refresh() ตอนเริ่มต้น เพื่อไม่ให้มีเลเยอร์ default
+
+// Font dropdown event
+document.getElementById('fontSelect').addEventListener('change', async (e) => {
+    const fontPath = e.target.value;
+    if (fontPath) {
+        const success = await loadFontFromPath(fontPath);
+        if (success) {
+            // Clear file upload
+            document.getElementById('font').value = '';
+        }
+    }
+});
+
+// Font file upload event (existing)
+document.getElementById('font').addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        // Clear dropdown selection
+        document.getElementById('fontSelect').value = '';
+    }
+});
 
 // PNG Extrude event handler
 document.querySelector('#addPngExtrude').addEventListener('click', async () => {
