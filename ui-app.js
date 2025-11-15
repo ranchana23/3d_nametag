@@ -849,8 +849,10 @@ async function refresh() {
             baseGeom,
             new THREE.MeshStandardMaterial({
                 color: new THREE.Color(c.baseColor),
-                metalness: 0.0,
-                roughness: 0.9
+                metalness: 0.1,
+                roughness: 0.5,
+                emissive: new THREE.Color(c.baseColor),
+                emissiveIntensity: 0.15
             })
         );
         scene.add(baseMesh);
@@ -861,8 +863,10 @@ async function refresh() {
                 textGeom,
                 new THREE.MeshStandardMaterial({
                     color: new THREE.Color(c.textColor),
-                    metalness: 0.0,
-                    roughness: 0.7
+                    metalness: 0.1,
+                    roughness: 0.5,
+                    emissive: new THREE.Color(c.textColor),
+                    emissiveIntensity: 0.15
                 })
             );
             scene.add(textMesh);
@@ -1005,8 +1009,10 @@ document.querySelector('#add').addEventListener('click', async () => {
             baseGeom,
             new THREE.MeshStandardMaterial({
                 color: new THREE.Color(c.baseColor),
-                metalness: 0.0,
-                roughness: 0.9
+                metalness: 0.1,
+                roughness: 0.5,
+                emissive: new THREE.Color(c.baseColor),
+                emissiveIntensity: 0.15
             })
         );
         // preserve transform if re-adding
@@ -1021,8 +1027,10 @@ document.querySelector('#add').addEventListener('click', async () => {
                 textGeom,
                 new THREE.MeshStandardMaterial({
                     color: new THREE.Color(c.textColor),
-                    metalness: 0.0,
-                    roughness: 0.7
+                    metalness: 0.1,
+                    roughness: 0.5,
+                    emissive: new THREE.Color(c.textColor),
+                    emissiveIntensity: 0.15
                 })
             );
             Object.assign(textMesh.position, meshProps.position);
@@ -1080,48 +1088,61 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
 });
 
 // เพิ่ม event สำหรับ export 3MF
-document.querySelector('#export3MF').addEventListener('click', () => {
+document.querySelector('#export3MF').addEventListener('click', async () => {
     try {
-        if (!baseMesh && !textMesh) {
+        // เช็คว่ามี layer อยู่หรือไม่
+        if (layers.length === 0) {
             MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
             return;
         }
-        const hasVerts = (geom) =>
-            geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
-        const geoms = [];
-        if (baseMesh?.geometry && hasVerts(baseMesh.geometry)) {
-            geoms.push(baseMesh.geometry.clone());
-        }
-        if (textMesh?.geometry && hasVerts(textMesh.geometry)) {
-            geoms.push(textMesh.geometry.clone());
-        }
-        if (geoms.length === 0) {
+
+        MSG.textContent = '⏳ กำลังสร้างไฟล์ 3MF พร้อมสี...';
+
+        // สร้าง scene ชั่วคราวสำหรับ export
+        const exportScene = new THREE.Scene();
+        
+        // เพิ่มทุก layer ที่มี mesh เข้า scene
+        layers.forEach(layer => {
+            if (layer.mesh && layer.mesh.geometry) {
+                const geom = layer.mesh.geometry.clone();
+                geom.applyMatrix4(layer.mesh.matrixWorld);
+                
+                // สร้าง material ใหม่ที่มีสีจาก layer
+                const mat = new THREE.MeshStandardMaterial({
+                    color: layer.mesh.material.color.clone()
+                });
+                
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.name = layer.name || 'Layer';
+                exportScene.add(mesh);
+            }
+        });
+
+        if (exportScene.children.length === 0) {
             MSG.textContent = '❌ ไม่มี geometry ให้ส่งออก';
             return;
         }
-        const mergedForExport = BufferGeometryUtils.mergeGeometries(geoms, false);
-        if (!mergedForExport) {
-            MSG.textContent = '❌ รวมชิ้นงานไม่สำเร็จ';
-            return;
-        }
-        // ใช้ ThreeMFExporter (mock)
+
+        // ใช้ ThreeMFExporter แบบใหม่ที่รองรับสี
         const exporter = new ThreeMFExporter();
-        const group = new THREE.Group();
-        group.add(new THREE.Mesh(mergedForExport));
-        const model = exporter.parse(group);
-        if (!model || typeof model !== 'string') {
-            MSG.textContent = '❌ 3MF export ยังไม่รองรับในเดโมนี้';
+        const blob = await exporter.parse(exportScene);
+        
+        if (!blob) {
+            MSG.textContent = '❌ สร้างไฟล์ 3MF ไม่สำเร็จ';
             return;
         }
+
+        // Download file
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([model], { type: 'model/3mf' }));
-        a.download = `nametag_${(document.querySelector('#text').value || 'Ranchana')}.3mf`;
+        a.href = URL.createObjectURL(blob);
+        a.download = `nametag_${(document.querySelector('#text').value || 'Ranchana')}_multicolor.3mf`;
         a.click();
         URL.revokeObjectURL(a.href);
-        MSG.textContent = '✅ ส่งออก 3MF สำเร็จ';
+        
+        MSG.textContent = `✅ ส่งออก 3MF พร้อมสี ${layers.length} เลเยอร์สำเร็จ!`;
     } catch (e) {
         console.error(e);
-        MSG.textContent = '❌ ส่งออก 3MF ไม่สำเร็จ';
+        MSG.textContent = '❌ ส่งออก 3MF ไม่สำเร็จ: ' + e.message;
     }
 });
 
@@ -1182,7 +1203,13 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         });
         geometry.computeVertexNormals();
         geometry.translate(0, 0, 0);
-        const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            metalness: 0.1,
+            roughness: 0.5,
+            emissive: 0x222222,
+            emissiveIntensity: 0.15
+        });
         const mesh = new THREE.Mesh(geometry, material);
     // คำนวณ scale factor จาก targetWidthMM / pngWidthPx แล้วหารด้วย 10 เพื่อให้ขนาด mm ตรงจริง
     const scaleFactor = (targetWidthMM / pngWidthPx) ;

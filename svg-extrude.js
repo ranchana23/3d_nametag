@@ -36,7 +36,13 @@ export async function addSVGExtrudeToScene({ file, extrudeDepth, scene, addLayer
             curveSegments: 12
         });
         geometry.computeVertexNormals();
-        const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0x222222,
+            metalness: 0.1,
+            roughness: 0.5,
+            emissive: 0x222222,
+            emissiveIntensity: 0.15
+        });
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         addLayer(mesh, 'SVG Extrude');

@@ -115,7 +115,13 @@ export async function addPNGExtrudeToScene({ file, extrudeDepth, scene, addLayer
     geometry.computeVertexNormals();
     // Center and scale mesh
     geometry.translate(-img.width/2, -img.height/2, 0);
-    const material = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0x222222,
+        metalness: 0.1,
+        roughness: 0.5,
+        emissive: 0x222222,
+        emissiveIntensity: 0.15
+    });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.scale.set(scale, scale, scale);
     scene.add(mesh);
