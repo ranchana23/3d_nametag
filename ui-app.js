@@ -504,15 +504,115 @@ const FONT_LIST = [
     'font/FREE/Simanja.ttf'
 ];
 
-function populateFontDropdown() {
-    const select = document.getElementById('fontSelect');
-    FONT_LIST.forEach(fontPath => {
+async function populateFontDropdown() {
+    const listContainer = document.getElementById('fontDropdownList');
+    const selectedDiv = document.getElementById('fontDropdownSelected');
+    
+    // สร้าง style element สำหรับ @font-face
+    const styleEl = document.createElement('style');
+    document.head.appendChild(styleEl);
+    
+    let currentSelectedValue = '';
+    
+    for (const fontPath of FONT_LIST) {
         const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
-        const option = document.createElement('option');
-        option.value = fontPath;
-        option.textContent = fileName;
-        select.appendChild(option);
+        const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        // สร้าง @font-face rule
+        const fontFaceRule = `
+            @font-face {
+                font-family: '${fontFamilyName}';
+                src: url('${fontPath}');
+                font-display: swap;
+            }
+        `;
+        styleEl.textContent += fontFaceRule;
+        
+        // สร้าง custom option
+        const item = document.createElement('div');
+        item.className = 'custom-select-item';
+        item.textContent = fileName;
+        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+        item.dataset.value = fontPath;
+        item.dataset.fontName = fileName;
+        
+        // Click event
+        item.addEventListener('click', async () => {
+            // Remove previous selection
+            listContainer.querySelectorAll('.custom-select-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Mark as selected
+            item.classList.add('selected');
+            
+            // Update selected display
+            selectedDiv.textContent = fileName;
+            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+            
+            // Hide dropdown
+            listContainer.style.display = 'none';
+            selectedDiv.classList.remove('active');
+            
+            // Load font
+            const success = await loadFontFromPath(fontPath);
+            
+            // Clear file upload
+            document.getElementById('font').value = '';
+            
+            currentSelectedValue = fontPath;
+            
+            // Auto refresh preview if font loaded successfully
+            if (success) {
+                MSG.textContent = '⏳ กำลังอัพเดต preview...';
+                await refresh();
+                MSG.textContent = `✅ ใช้ฟอนต์: ${fileName} และอัพเดต preview แล้ว`;
+            }
+        });
+        
+        listContainer.appendChild(item);
+    }
+    
+    // Toggle dropdown with position calculation
+    selectedDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = listContainer.style.display === 'block';
+        
+        if (!isVisible) {
+            // Calculate position
+            const rect = selectedDiv.getBoundingClientRect();
+            listContainer.style.top = `${rect.bottom + 4}px`;
+            listContainer.style.left = `${rect.left}px`;
+            listContainer.style.width = `${rect.width}px`;
+            listContainer.style.display = 'block';
+            selectedDiv.classList.add('active');
+        } else {
+            listContainer.style.display = 'none';
+            selectedDiv.classList.remove('active');
+        }
     });
+    
+    // Update position on scroll
+    const updateDropdownPosition = () => {
+        if (listContainer.style.display === 'block') {
+            const rect = selectedDiv.getBoundingClientRect();
+            listContainer.style.top = `${rect.bottom + 4}px`;
+            listContainer.style.left = `${rect.left}px`;
+        }
+    };
+    
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#fontDropdownWrapper')) {
+            listContainer.style.display = 'none';
+            selectedDiv.classList.remove('active');
+        }
+    });
+    
+    console.log(`✅ สร้าง custom dropdown พร้อมตัวอย่างฟอนต์ ${FONT_LIST.length} ฟอนต์`);
 }
 
 async function loadFontFromPath(fontPath) {
@@ -1230,24 +1330,19 @@ populateFontDropdown(); // โหลดรายการฟอนต์ใน d
 applyStyleUI();   // ✅ แสดง UI ให้ตรงกับสไตล์เริ่มต้น
 // ไม่ต้อง refresh() ตอนเริ่มต้น เพื่อไม่ให้มีเลเยอร์ default
 
-// Font dropdown event
-document.getElementById('fontSelect').addEventListener('change', async (e) => {
-    const fontPath = e.target.value;
-    if (fontPath) {
-        const success = await loadFontFromPath(fontPath);
-        if (success) {
-            // Clear file upload
-            document.getElementById('font').value = '';
-        }
-    }
-});
-
-// Font file upload event (existing)
+// Font file upload event
 document.getElementById('font').addEventListener('change', (e) => {
     const file = e.target.files?.[0];
     if (file) {
-        // Clear dropdown selection
-        document.getElementById('fontSelect').value = '';
+        // Clear custom dropdown selection
+        const selectedDiv = document.getElementById('fontDropdownSelected');
+        selectedDiv.textContent = '-- เลือกฟอนต์ --';
+        selectedDiv.style.fontFamily = "'Noto Sans Thai', sans-serif";
+        
+        // Remove selected class from all items
+        document.querySelectorAll('.custom-select-item').forEach(item => {
+            item.classList.remove('selected');
+        });
     }
 });
 

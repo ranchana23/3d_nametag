@@ -26,9 +26,15 @@
             <label>ชื่อ (TEXT)</label>
             <input id="text" type="text" value="Ranchana" />
             <label>เลือกฟอนต์จากคลัง</label>
-            <select id="fontSelect">
-                <option value="">-- เลือกฟอนต์ --</option>
-            </select>
+            <!-- Custom Font Dropdown -->
+            <div id="fontDropdownWrapper" class="custom-select-wrapper">
+                <div id="fontDropdownSelected" class="custom-select-selected">
+                    -- เลือกฟอนต์ --
+                </div>
+                <div id="fontDropdownList" class="custom-select-items" style="display:none;">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+            </div>
             <label>หรืออัพโหลดฟอนต์เอง (.ttf/.otf)</label>
             <input id="font" type="file" accept=".ttf,.otf" />
             <div class="muted">เลือกจาก dropdown หรืออัพโหลดฟอนต์ของคุณเอง</div>
@@ -87,7 +93,7 @@
             <div class="row">
                 <div>
                     <label>ระยะห่างระหว่างตัวอักษร (mm)</label>
-                    <input id="letterSpacing" type="number" step="0.1" value="0" />
+                    <input id="letterSpacing" type="number" step="1" value="0" />
                 </div>
                 <div>
                     <label>ความหนาตัวอักษร (mm)</label>
