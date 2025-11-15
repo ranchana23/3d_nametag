@@ -55,12 +55,14 @@ window.addEventListener('DOMContentLoaded', () => {
                 toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
             });
             
+            // click event - add เฉพาะครั้งแรกที่สร้างปุ่ม
+            toggleBtn.addEventListener('click', () => {
+                const list = document.getElementById('layer-list');
+                list.style.display = (list.style.display === 'none') ? 'block' : 'none';
+            });
+            
             panel.querySelector('h3').appendChild(toggleBtn);
         }
-        toggleBtn.addEventListener('click', () => {
-            const list = document.getElementById('layer-list');
-            list.style.display = (list.style.display === 'none') ? 'block' : 'none';
-        });
     }
 });
 // ui-app.js — preview + STL export one-piece

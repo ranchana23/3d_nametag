@@ -322,3 +322,94 @@ select::-webkit-scrollbar-thumb:hover {
     background: var(--contrast);
     border-radius: 8px;
 }
+
+/* Layer Item Styling */
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1.5px solid var(--highlight);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(105,111,199,0.08);
+}
+
+.layer-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 3px 10px rgba(105,111,199,0.15);
+    transform: translateY(-1px);
+}
+
+.layer-item .layer-name-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    font-family: 'Noto Sans Thai', sans-serif;
+}
+
+.layer-item .layer-name-input {
+    font-family: 'Noto Sans Thai', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border: 1.5px solid var(--primary);
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #333;
+    transition: border-color 0.2s ease;
+}
+
+.layer-item .layer-name-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(242,174,187,0.1);
+}
+
+.layer-item button {
+    background: var(--highlight);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    box-shadow: 0 2px 4px rgba(105,111,199,0.15);
+}
+
+.layer-item button:hover {
+    background: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(105,111,199,0.25);
+}
+
+.layer-item button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(105,111,199,0.15);
+}
+
+.layer-item .edit-name-btn:hover,
+.layer-item .save-name-btn:hover {
+    background: #4CAF50;
+}
+
+.layer-item .delete-btn:hover {
+    background: #f44336;
+}
+
+.layer-item .show-hide-btn:hover {
+    background: var(--accent);
+}
+
+.layer-item .move-up-btn:hover,
+.layer-item .move-down-btn:hover {
+    background: var(--secondary);
+}
