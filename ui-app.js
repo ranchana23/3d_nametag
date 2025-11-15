@@ -73,6 +73,8 @@ import { ThreeMFExporter } from './3MFExporter.js';
 // ฟังก์ชัน export STL แยกแต่ละเลเยอร์
 function exportSTLByLayer() {
     try {
+        const textValue = document.querySelector('#text').value || 'nametag';
+        const fileName = textValue.replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
         const hasVerts = (geom) => geom && geom.attributes && geom.attributes.position && geom.attributes.position.count > 0;
         layers.forEach(layer => {
             if (layer.mesh?.geometry && hasVerts(layer.mesh.geometry)) {
@@ -84,7 +86,8 @@ function exportSTLByLayer() {
                 const stl = exporter.parse(meshForExport);
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
-                a.download = `layer_${layer.name.replace(/[^a-zA-Z0-9ก-๙]/g, '_')}.stl`;
+                const layerName = layer.name.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+                a.download = `${fileName}_layer_${layerName}.stl`;
                 a.click();
                 URL.revokeObjectURL(a.href);
             }
@@ -1252,7 +1255,9 @@ document.querySelector('#exportSTL').addEventListener('click', () => {
         const stl = exporter.parse(mergedMeshForExport);
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([stl], { type: 'model/stl' }));
-        a.download = `nametag_scene.stl`;
+        const textValue = document.querySelector('#text').value || 'nametag';
+        const fileName = textValue.replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+        a.download = `${fileName}.stl`;
         a.click();
         URL.revokeObjectURL(a.href);
         MSG.textContent = '✅ ส่งออก STL ทุกชิ้นในเฟรมสำเร็จ';
@@ -1310,7 +1315,9 @@ document.querySelector('#export3MF').addEventListener('click', async () => {
         // Download file
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `nametag_${(document.querySelector('#text').value || 'Ranchana')}_multicolor.3mf`;
+        const textValue = document.querySelector('#text').value || 'nametag';
+        const fileName = textValue.replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+        a.download = `${fileName}_multicolor.3mf`;
         a.click();
         URL.revokeObjectURL(a.href);
         
