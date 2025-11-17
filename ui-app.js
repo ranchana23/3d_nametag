@@ -519,7 +519,23 @@ async function populateFontDropdown() {
     
     let currentSelectedValue = '';
     
-    for (const fontPath of FONT_LIST) {
+    // Prefer manifest file if available
+    let fontPaths = FONT_LIST.slice();
+    try {
+        const resp = await fetch('font/manifest.json');
+        if (resp.ok) {
+            const manifest = await resp.json();
+            if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
+        }
+    } catch (e) {
+        console.warn('No font manifest, falling back to built-in FONT_LIST');
+    }
+
+    // dedupe and normalize
+    const seen = new Set();
+    for (const fontPath of fontPaths) {
+        if (!fontPath || seen.has(fontPath)) continue;
+        seen.add(fontPath);
         const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
         const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
         

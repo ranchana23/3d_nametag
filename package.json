@@ -4,8 +4,9 @@
   "description": "",
   "main": "3MFExporter.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx live-server --open=index.html --port=3000"
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "start": "npx live-server --open=index.html --port=3000",
+  "update-font-manifest": "node ./scripts/gen-font-manifest.js"
   },
   "repository": {
     "type": "git",
