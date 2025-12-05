@@ -69,6 +69,8 @@ function createRectangle() {
     const enableHole = document.querySelector('#enableHole').checked;
     const holeDiameter = parseFloat(document.querySelector('#holeDiameter').value) || 5;
     const holeOffset = parseFloat(document.querySelector('#holeOffset').value) || 8;
+    const holeSide = document.querySelector('#holeSide').value; // 'left' or 'right'
+    const holePosition = document.querySelector('#holePosition').value; // 'top', 'center', 'bottom'
 
     try {
         // Create base shape
@@ -77,8 +79,24 @@ function createRectangle() {
         // Add hole if enabled
         if (enableHole) {
             const holeRadius = holeDiameter / 2;
-            const holeX = width / 2 - holeOffset;
-            const holeY = length / 2 - holeOffset;
+            
+            // Calculate X position based on side (left/right)
+            let holeX;
+            if (holeSide === 'left') {
+                holeX = -width / 2 + holeOffset;
+            } else { // right
+                holeX = width / 2 - holeOffset;
+            }
+            
+            // Calculate Y position based on position (top/center/bottom)
+            let holeY;
+            if (holePosition === 'top') {
+                holeY = length / 2 - holeOffset;
+            } else if (holePosition === 'center') {
+                holeY = 0; // center of the shape
+            } else { // bottom
+                holeY = -length / 2 + holeOffset;
+            }
             
             const holePath = new THREE.Path();
             holePath.absarc(holeX, holeY, holeRadius, 0, Math.PI * 2, true);
@@ -255,6 +273,13 @@ document.querySelectorAll('input').forEach(input => {
             if (currentMesh) createRectangle();
         });
     }
+});
+
+// Auto-update on select (dropdown) change
+document.querySelectorAll('select').forEach(select => {
+    select.addEventListener('change', () => {
+        if (currentMesh) createRectangle();
+    });
 });
 
 // Animation loop
