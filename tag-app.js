@@ -12,8 +12,9 @@ const DIM_TEXT = document.querySelector('#dim-text');
 // Font loader
 const fontLoader = new FontLoader();
 let loadedFont = null;
+let opentypeFont = null; // Store opentype.js font
 
-// Load default font (Noto Sans Thai)
+// Load default font (Helvetiker)
 fontLoader.load(
     'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
     (font) => {
@@ -176,44 +177,58 @@ function createRectangle() {
         const tagName = document.querySelector('#tagName').value.trim();
         const textHeight = parseFloat(document.querySelector('#textHeight').value) || 4;
         
-        if (tagName && loadedFont) {
+        if (tagName) {
             try {
-                const textGeometry = new TextGeometry(tagName, {
-                    font: loadedFont,
-                    size: 5, // Font size
-                    height: textHeight, // Extrude height
-                    curveSegments: 12,
-                    bevelEnabled: false
-                });
+                let textGeometry = null;
+                let textWidth = 0;
                 
-                // Center text
-                textGeometry.computeBoundingBox();
-                const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+                // Use opentype font if available, otherwise use Three.js font
+                if (opentypeFont) {
+                    const result = createTextFromOpentype(tagName, 5, textHeight);
+                    if (result) {
+                        textGeometry = result.geometry;
+                        textWidth = result.textWidth;
+                    }
+                } else if (loadedFont) {
+                    textGeometry = new TextGeometry(tagName, {
+                        font: loadedFont,
+                        size: 5, // Font size
+                        height: textHeight, // Extrude height
+                        curveSegments: 12,
+                        bevelEnabled: false
+                    });
+                    
+                    // Center text
+                    textGeometry.computeBoundingBox();
+                    textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+                }
                 
-                // Create text material (slightly different color)
-                const textMaterial = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(color).offsetHSL(0, 0, -0.1), // Slightly darker
-                    metalness: 0.1,
-                    roughness: 0.5,
-                    emissive: new THREE.Color(color),
-                    emissiveIntensity: 0.15
-                });
-                
-                textMesh = new THREE.Mesh(textGeometry, textMaterial);
-                
-                // Position text on top of base (same coordinate system)
-                textMesh.position.set(-textWidth / 2, 0, height + textHeight / 2);
-                
-                // Apply the same rotation as the base from controls
-                const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
-                const rotY = parseFloat(document.querySelector('#rotateY').value) || 0;
-                const rotZ = parseFloat(document.querySelector('#rotateZ').value) || 0;
-                
-                textMesh.rotation.x = rotX * Math.PI / 180;
-                textMesh.rotation.y = rotY * Math.PI / 180;
-                textMesh.rotation.z = rotZ * Math.PI / 180;
-                
-                scene.add(textMesh);
+                if (textGeometry) {
+                    // Create text material (slightly different color)
+                    const textMaterial = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(color).offsetHSL(0, 0, -0.1), // Slightly darker
+                        metalness: 0.1,
+                        roughness: 0.5,
+                        emissive: new THREE.Color(color),
+                        emissiveIntensity: 0.15
+                    });
+                    
+                    textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    
+                    // Position text on top of base (same coordinate system)
+                    textMesh.position.set(-textWidth / 2, 0, height + textHeight / 2);
+                    
+                    // Apply the same rotation as the base from controls
+                    const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
+                    const rotY = parseFloat(document.querySelector('#rotateY').value) || 0;
+                    const rotZ = parseFloat(document.querySelector('#rotateZ').value) || 0;
+                    
+                    textMesh.rotation.x = rotX * Math.PI / 180;
+                    textMesh.rotation.y = rotY * Math.PI / 180;
+                    textMesh.rotation.z = rotZ * Math.PI / 180;
+                    
+                    scene.add(textMesh);
+                }
             } catch (e) {
                 console.error('Error creating text:', e);
             }
@@ -354,6 +369,280 @@ document.querySelectorAll('[data-view]').forEach(btn => {
     });
 });
 
+// ============= Font Management =============
+const FONT_LIST = [
+    'font/iann_b.ttf',
+    'font/Better.ttf',
+    'font/Butterfly.ttf',
+    'font/font_free/Mali-Bold.ttf',
+    'font/font_free/Mali-Medium.ttf',
+    'font/FREE/BarberChop.otf',
+    'font/FREE/Simanja.ttf'
+];
+
+let currentFontPath = null;
+
+// Convert opentype.js path to Three.js Shape
+function opentypePathToShapes(pathData) {
+    const shapes = [];
+    const commands = pathData.commands;
+    if (!commands || commands.length === 0) return shapes;
+
+    let currentShape = null;
+    let currentPath = null;
+
+    for (let i = 0; i < commands.length; i++) {
+        const cmd = commands[i];
+        
+        if (cmd.type === 'M') { // Move to (start new path)
+            if (currentPath) {
+                if (currentPath.curves.length > 0) {
+                    if (currentShape) {
+                        currentShape.holes.push(currentPath);
+                    } else {
+                        currentShape = currentPath;
+                    }
+                }
+            }
+            currentPath = new THREE.Shape();
+            currentPath.moveTo(cmd.x, -cmd.y); // Flip Y for Three.js
+        } else if (cmd.type === 'L') { // Line to
+            if (currentPath) currentPath.lineTo(cmd.x, -cmd.y);
+        } else if (cmd.type === 'C') { // Cubic bezier
+            if (currentPath) {
+                currentPath.bezierCurveTo(
+                    cmd.x1, -cmd.y1,
+                    cmd.x2, -cmd.y2,
+                    cmd.x, -cmd.y
+                );
+            }
+        } else if (cmd.type === 'Q') { // Quadratic bezier
+            if (currentPath) {
+                currentPath.quadraticCurveTo(
+                    cmd.x1, -cmd.y1,
+                    cmd.x, -cmd.y
+                );
+            }
+        } else if (cmd.type === 'Z') { // Close path
+            // Path completed
+            if (currentPath && currentPath.curves.length > 0) {
+                if (currentShape && currentShape !== currentPath) {
+                    currentShape.holes.push(currentPath);
+                } else if (!currentShape) {
+                    currentShape = currentPath;
+                }
+                currentPath = null;
+            }
+        }
+    }
+
+    // Add last path if exists
+    if (currentPath && currentPath.curves.length > 0) {
+        if (currentShape && currentShape !== currentPath) {
+            currentShape.holes.push(currentPath);
+        } else {
+            currentShape = currentPath;
+        }
+    }
+
+    if (currentShape) shapes.push(currentShape);
+    return shapes;
+}
+
+// Create text geometry from opentype.js font
+function createTextFromOpentype(text, fontSize, extrudeDepth) {
+    if (!opentypeFont) return null;
+
+    const allShapes = [];
+    let xOffset = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const glyph = opentypeFont.charToGlyph(char);
+        
+        if (glyph && glyph.path) {
+            const path = glyph.getPath(xOffset, 0, fontSize);
+            const shapes = opentypePathToShapes(path);
+            
+            shapes.forEach(shape => {
+                allShapes.push(shape);
+            });
+            
+            // Advance for next character
+            if (i < text.length - 1) {
+                const nextChar = text[i + 1];
+                const kerningValue = opentypeFont.getKerningValue(glyph, opentypeFont.charToGlyph(nextChar));
+                xOffset += (glyph.advanceWidth + kerningValue) * fontSize / opentypeFont.unitsPerEm;
+            } else {
+                xOffset += glyph.advanceWidth * fontSize / opentypeFont.unitsPerEm;
+            }
+        }
+    }
+
+    if (allShapes.length === 0) return null;
+
+    // Create extruded geometry from shapes
+    const geometry = new THREE.ExtrudeGeometry(allShapes, {
+        depth: extrudeDepth,
+        bevelEnabled: false,
+        curveSegments: 12
+    });
+
+    // Compute bounding box for centering
+    geometry.computeBoundingBox();
+    const textWidth = geometry.boundingBox.max.x - geometry.boundingBox.min.x;
+    
+    return { geometry, textWidth };
+}
+
+async function populateFontDropdown() {
+    const listContainer = document.getElementById('fontDropdownList');
+    const selectedDiv = document.getElementById('fontDropdownSelected');
+    
+    // สร้าง style element สำหรับ @font-face
+    const styleEl = document.createElement('style');
+    document.head.appendChild(styleEl);
+    
+    // Prefer manifest file if available
+    let fontPaths = FONT_LIST.slice();
+    try {
+        const resp = await fetch('font/manifest.json');
+        if (resp.ok) {
+            const manifest = await resp.json();
+            if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
+        }
+    } catch (e) {
+        console.warn('No font manifest, falling back to built-in FONT_LIST');
+    }
+
+    // dedupe and normalize
+    const seen = new Set();
+    for (const fontPath of fontPaths) {
+        if (!fontPath || seen.has(fontPath)) continue;
+        seen.add(fontPath);
+        const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
+        const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        // สร้าง @font-face rule
+        const fontFaceRule = `
+            @font-face {
+                font-family: '${fontFamilyName}';
+                src: url('${fontPath}');
+                font-display: swap;
+            }
+        `;
+        styleEl.textContent += fontFaceRule;
+        
+        // สร้าง custom option
+        const item = document.createElement('div');
+        item.className = 'custom-select-item';
+        item.textContent = fileName;
+        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+        item.dataset.value = fontPath;
+        item.dataset.fontName = fileName;
+        
+        // Click event
+        item.addEventListener('click', async () => {
+            // Remove previous selection
+            listContainer.querySelectorAll('.custom-select-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Mark as selected
+            item.classList.add('selected');
+            
+            // Update selected display
+            selectedDiv.textContent = fileName;
+            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+            
+            // Hide dropdown
+            listContainer.style.display = 'none';
+            selectedDiv.classList.remove('active');
+            
+            // Load font
+            await loadFontFromPath(fontPath);
+        });
+        
+        listContainer.appendChild(item);
+    }
+    
+    // Toggle dropdown visibility
+    selectedDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = listContainer.style.display === 'block';
+        listContainer.style.display = isVisible ? 'none' : 'block';
+        selectedDiv.classList.toggle('active', !isVisible);
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        listContainer.style.display = 'none';
+        selectedDiv.classList.remove('active');
+    });
+}
+
+async function loadFontFromPath(fontPath) {
+    MSG.textContent = '⏳ กำลังโหลดฟอนต์...';
+    currentFontPath = fontPath;
+    
+    try {
+        // Load TTF/OTF using opentype.js
+        const response = await fetch(fontPath);
+        const arrayBuffer = await response.arrayBuffer();
+        opentypeFont = opentype.parse(arrayBuffer);
+        
+        // Clear Three.js font to use opentype instead
+        loadedFont = null;
+        
+        MSG.textContent = `✅ โหลดฟอนต์: ${fontPath.split('/').pop()}`;
+        
+        // Recreate geometry with new font
+        if (currentMesh) createRectangle();
+        
+    } catch (error) {
+        console.error('Error loading font:', error);
+        MSG.textContent = '⚠️ โหลดฟอนต์ไม่สำเร็จ - ใช้ฟอนต์ default';
+        opentypeFont = null;
+        // Reload default font
+        fontLoader.load(
+            'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
+            (font) => {
+                loadedFont = font;
+                if (currentMesh) createRectangle();
+            }
+        );
+    }
+}
+
+// Font upload handler
+document.getElementById('fontUpload')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    MSG.textContent = '⏳ กำลังโหลดฟอนต์...';
+    
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        opentypeFont = opentype.parse(arrayBuffer);
+        
+        // Clear Three.js font to use opentype instead
+        loadedFont = null;
+        
+        MSG.textContent = `✅ โหลดฟอนต์: ${file.name}`;
+        currentFontPath = 'custom';
+        
+        // Update dropdown display
+        const selectedDiv = document.getElementById('fontDropdownSelected');
+        selectedDiv.textContent = file.name.replace(/\.(ttf|otf)$/i, '');
+        
+        if (currentMesh) createRectangle();
+        
+    } catch (error) {
+        console.error('Error loading custom font:', error);
+        MSG.textContent = '⚠️ โหลดฟอนต์ไม่สำเร็จ';
+    }
+});
+
 // Event listeners
 document.querySelector('#createRect').addEventListener('click', createRectangle);
 document.querySelector('#exportSTL').addEventListener('click', exportSTL);
@@ -403,3 +692,6 @@ animate();
 
 // Create initial rectangle
 createRectangle();
+
+// Populate font dropdown
+populateFontDropdown();
