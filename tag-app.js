@@ -5,6 +5,8 @@ import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters
 import { ThreeMFExporter } from './3MFExporter.js';
 import { TextGeometry } from 'https://esm.sh/three@0.168.0/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/FontLoader.js';
+import { mergeGeometries } from 'https://esm.sh/three@0.168.0/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'https://esm.sh/three@0.168.0/examples/jsm/utils/BufferGeometryUtils.js';
 
 const MSG = document.querySelector('#msg');
 const DIM_TEXT = document.querySelector('#dim-text');
@@ -215,8 +217,9 @@ function createRectangle() {
                         }
                     });
                     
-                    // Position text group on top of base (same coordinate system)
-                    result.group.position.set(0, 0, height + textHeight / 2);
+                    // Position text group on top of base (overlap slightly for manifold merge)
+                    // Subtract 0.1mm to ensure text overlaps with base
+                    result.group.position.set(0, 0, height + textHeight / 2 - 0.1);
                     
                     // Apply the same rotation as the base from controls
                     const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
@@ -276,6 +279,55 @@ function resetRotation() {
     MSG.textContent = '🔄 รีเซ็ตมุมหมุนแล้ว';
 }
 
+// Merge all geometries into a single manifold mesh
+function createMergedMesh() {
+    const geometries = [];
+    
+    // Clone and collect base geometry
+    if (currentMesh) {
+        const baseGeo = currentMesh.geometry.clone();
+        baseGeo.applyMatrix4(currentMesh.matrix);
+        geometries.push(baseGeo);
+    }
+    
+    // Clone and collect text geometries
+    if (textMesh) {
+        textMesh.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.geometry) {
+                const textGeo = child.geometry.clone();
+                // Apply all transformations (parent group + child mesh)
+                child.updateWorldMatrix(true, false);
+                textGeo.applyMatrix4(child.matrixWorld);
+                geometries.push(textGeo);
+            }
+        });
+    }
+    
+    if (geometries.length === 0) return null;
+    
+    // Merge all geometries into one
+    let mergedGeometry = mergeGeometries(geometries, false);
+    
+    // Clean up: merge duplicate vertices (critical for manifold mesh)
+    mergedGeometry = mergeVertices(mergedGeometry, 0.0001);
+    
+    // Recompute normals for proper shading
+    mergedGeometry.computeVertexNormals();
+    
+    // Convert to non-indexed geometry (sometimes helps with manifold issues)
+    if (mergedGeometry.index !== null) {
+        mergedGeometry = mergedGeometry.toNonIndexed();
+        // Merge vertices again after converting to non-indexed
+        mergedGeometry = mergeVertices(mergedGeometry, 0.0001);
+        mergedGeometry.computeVertexNormals();
+    }
+    
+    // Create material (use base material)
+    const material = currentMesh ? currentMesh.material.clone() : new THREE.MeshStandardMaterial();
+    
+    return new THREE.Mesh(mergedGeometry, material);
+}
+
 // Export STL
 function exportSTL() {
     if (!currentMesh) {
@@ -285,16 +337,28 @@ function exportSTL() {
 
     try {
         const exporter = new STLExporter();
+        const shouldMerge = document.querySelector('#mergeGeometry').checked;
+        let exportTarget;
         
-        // Create a temporary scene to export both base and text
-        const exportScene = new THREE.Scene();
-        exportScene.add(currentMesh.clone());
-        if (textMesh) {
-            const clonedText = textMesh.clone(true); // true = deep clone for groups
-            exportScene.add(clonedText);
+        if (shouldMerge) {
+            // Merge all geometries into a single manifold mesh
+            const mergedMesh = createMergedMesh();
+            if (!mergedMesh) {
+                MSG.textContent = '❌ ไม่สามารถรวม geometry ได้';
+                return;
+            }
+            exportTarget = mergedMesh;
+        } else {
+            // Export as separate objects (manifold-safe)
+            const exportScene = new THREE.Scene();
+            exportScene.add(currentMesh.clone());
+            if (textMesh) {
+                exportScene.add(textMesh.clone(true));
+            }
+            exportTarget = exportScene;
         }
         
-        const stl = exporter.parse(exportScene);
+        const stl = exporter.parse(exportTarget);
         const blob = new Blob([stl], { type: 'model/stl' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -306,10 +370,18 @@ function exportSTL() {
         
         a.click();
         URL.revokeObjectURL(a.href);
-        MSG.textContent = '✅ ส่งออก STL สำเร็จ';
+        
+        // Clean up if merged
+        if (shouldMerge && exportTarget instanceof THREE.Mesh) {
+            exportTarget.geometry.dispose();
+            exportTarget.material.dispose();
+        }
+        
+        const mode = shouldMerge ? '(Merged)' : '(Separate Objects)';
+        MSG.textContent = `✅ ส่งออก STL สำเร็จ ${mode}`;
     } catch (e) {
         console.error(e);
-        MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ';
+        MSG.textContent = '❌ ส่งออก STL ไม่สำเร็จ: ' + e.message;
     }
 }
 
@@ -322,16 +394,29 @@ async function export3MF() {
 
     try {
         MSG.textContent = '⏳ กำลังสร้างไฟล์ 3MF...';
+        const shouldMerge = document.querySelector('#mergeGeometry').checked;
+        let exportTarget;
         
-        const exportScene = new THREE.Scene();
-        exportScene.add(currentMesh.clone());
-        if (textMesh) {
-            const clonedText = textMesh.clone(true); // true = deep clone for groups
-            exportScene.add(clonedText);
+        if (shouldMerge) {
+            // Merge all geometries into a single manifold mesh
+            const mergedMesh = createMergedMesh();
+            if (!mergedMesh) {
+                MSG.textContent = '❌ ไม่สามารถรวม geometry ได้';
+                return;
+            }
+            exportTarget = mergedMesh;
+        } else {
+            // Export as separate objects (manifold-safe)
+            const exportScene = new THREE.Scene();
+            exportScene.add(currentMesh.clone());
+            if (textMesh) {
+                exportScene.add(textMesh.clone(true));
+            }
+            exportTarget = exportScene;
         }
 
         const exporter = new ThreeMFExporter();
-        const blob = await exporter.parse(exportScene);
+        const blob = await exporter.parse(exportTarget);
         
         if (!blob) {
             MSG.textContent = '❌ สร้างไฟล์ 3MF ไม่สำเร็จ';
@@ -349,7 +434,14 @@ async function export3MF() {
         a.click();
         URL.revokeObjectURL(a.href);
         
-        MSG.textContent = '✅ ส่งออก 3MF สำเร็จ';
+        // Clean up if merged
+        if (shouldMerge && exportTarget instanceof THREE.Mesh) {
+            exportTarget.geometry.dispose();
+            exportTarget.material.dispose();
+        }
+        
+        const mode = shouldMerge ? '(Merged)' : '(Separate Objects)';
+        MSG.textContent = `✅ ส่งออก 3MF สำเร็จ ${mode}`;
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ ส่งออก 3MF ไม่สำเร็จ: ' + e.message;

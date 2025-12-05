@@ -147,6 +147,14 @@
         
         <fieldset>
             <legend>Export</legend>
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <input type="checkbox" id="mergeGeometry" checked>
+                <span>รวม Geometry (Merge เป็นชิ้นเดียว)</span>
+            </label>
+            <div class="muted" style="margin-bottom:12px;font-size:12px;">
+                ✅ Merge: ปริ้นท์แข็งแรง แต่อาจมี non-manifold edges<br>
+                ❌ No Merge: แยกชิ้น (base + text) แต่ manifold 100%
+            </div>
             <button class="btn secondary" id="exportSTL">
                 <i class="fa fa-download"></i> Export STL
             </button>
