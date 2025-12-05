@@ -682,7 +682,7 @@ async function populateFontDropdown() {
         const item = document.createElement('div');
         item.className = 'custom-select-item';
         item.textContent = fileName;
-        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
         item.dataset.value = fontPath;
         item.dataset.fontName = fileName;
         
@@ -698,7 +698,7 @@ async function populateFontDropdown() {
             
             // Update selected display
             selectedDiv.textContent = fileName;
-            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             
             // Hide dropdown
             listContainer.style.display = 'none';

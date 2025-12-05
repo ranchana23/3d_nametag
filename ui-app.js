@@ -27,7 +27,7 @@ window.addEventListener('DOMContentLoaded', () => {
             toggleBtn = document.createElement('button');
             toggleBtn.id = 'toggle-layer-list';
             toggleBtn.textContent = 'แสดง/ซ่อน';
-            toggleBtn.style.fontFamily = "'Noto Sans Thai', sans-serif";
+            toggleBtn.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
             toggleBtn.style.fontSize = '12px';
             toggleBtn.style.fontWeight = '600';
             toggleBtn.style.padding = '6px 14px';
@@ -553,7 +553,7 @@ async function populateFontDropdown() {
         const item = document.createElement('div');
         item.className = 'custom-select-item';
         item.textContent = fileName;
-        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
         item.dataset.value = fontPath;
         item.dataset.fontName = fileName;
         
@@ -569,7 +569,7 @@ async function populateFontDropdown() {
             
             // Update selected display
             selectedDiv.textContent = fileName;
-            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai', sans-serif`;
+            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             
             // Hide dropdown
             listContainer.style.display = 'none';
@@ -1362,7 +1362,7 @@ document.getElementById('font').addEventListener('change', (e) => {
         // Clear custom dropdown selection
         const selectedDiv = document.getElementById('fontDropdownSelected');
         selectedDiv.textContent = '-- เลือกฟอนต์ --';
-        selectedDiv.style.fontFamily = "'Noto Sans Thai', sans-serif";
+        selectedDiv.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
         
         // Remove selected class from all items
         document.querySelectorAll('.custom-select-item').forEach(item => {
