@@ -160,8 +160,19 @@ function createRectangle() {
         }
         if (textMesh) {
             scene.remove(textMesh);
-            textMesh.geometry.dispose();
-            textMesh.material.dispose();
+            // Dispose geometry and material for all meshes in the group
+            textMesh.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
             textMesh = null;
         }
 
@@ -175,35 +186,19 @@ function createRectangle() {
 
         // Create text if name is provided and font is loaded
         const tagName = document.querySelector('#tagName').value.trim();
+        const fontSize = parseFloat(document.querySelector('#fontSize').value) || 5;
         const textHeight = parseFloat(document.querySelector('#textHeight').value) || 4;
+        const lineSpacing = parseFloat(document.querySelector('#lineSpacing').value) || 1.2;
         
         if (tagName) {
             try {
-                let textGeometry = null;
-                let textWidth = 0;
+                // Split text into lines
+                const lines = tagName.split('\n');
+                const useOpentype = !!opentypeFont;
                 
-                // Use opentype font if available, otherwise use Three.js font
-                if (opentypeFont) {
-                    const result = createTextFromOpentype(tagName, 5, textHeight);
-                    if (result) {
-                        textGeometry = result.geometry;
-                        textWidth = result.textWidth;
-                    }
-                } else if (loadedFont) {
-                    textGeometry = new TextGeometry(tagName, {
-                        font: loadedFont,
-                        size: 5, // Font size
-                        height: textHeight, // Extrude height
-                        curveSegments: 12,
-                        bevelEnabled: false
-                    });
-                    
-                    // Center text
-                    textGeometry.computeBoundingBox();
-                    textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
-                }
+                const result = createMultilineText(lines, fontSize, lineSpacing, textHeight, useOpentype);
                 
-                if (textGeometry) {
+                if (result.group.children.length > 0) {
                     // Create text material (slightly different color)
                     const textMaterial = new THREE.MeshStandardMaterial({
                         color: new THREE.Color(color).offsetHSL(0, 0, -0.1), // Slightly darker
@@ -213,20 +208,26 @@ function createRectangle() {
                         emissiveIntensity: 0.15
                     });
                     
-                    textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    // Apply material to all meshes in group
+                    result.group.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            child.material = textMaterial;
+                        }
+                    });
                     
-                    // Position text on top of base (same coordinate system)
-                    textMesh.position.set(-textWidth / 2, 0, height + textHeight / 2);
+                    // Position text group on top of base (same coordinate system)
+                    result.group.position.set(0, 0, height + textHeight / 2);
                     
                     // Apply the same rotation as the base from controls
                     const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
                     const rotY = parseFloat(document.querySelector('#rotateY').value) || 0;
                     const rotZ = parseFloat(document.querySelector('#rotateZ').value) || 0;
                     
-                    textMesh.rotation.x = rotX * Math.PI / 180;
-                    textMesh.rotation.y = rotY * Math.PI / 180;
-                    textMesh.rotation.z = rotZ * Math.PI / 180;
+                    result.group.rotation.x = rotX * Math.PI / 180;
+                    result.group.rotation.y = rotY * Math.PI / 180;
+                    result.group.rotation.z = rotZ * Math.PI / 180;
                     
+                    textMesh = result.group;
                     scene.add(textMesh);
                 }
             } catch (e) {
@@ -235,7 +236,7 @@ function createRectangle() {
         }
 
         // Update dimension text
-        const totalHeight = height + (tagName && loadedFont ? textHeight : 0);
+        const totalHeight = height + (tagName ? textHeight : 0);
         DIM_TEXT.textContent = `${width} × ${length} × ${totalHeight.toFixed(1)} mm`;
         MSG.textContent = '✅ สร้าง Rectangle สำเร็จ';
     } catch (e) {
@@ -289,7 +290,8 @@ function exportSTL() {
         const exportScene = new THREE.Scene();
         exportScene.add(currentMesh.clone());
         if (textMesh) {
-            exportScene.add(textMesh.clone());
+            const clonedText = textMesh.clone(true); // true = deep clone for groups
+            exportScene.add(clonedText);
         }
         
         const stl = exporter.parse(exportScene);
@@ -298,7 +300,8 @@ function exportSTL() {
         a.href = URL.createObjectURL(blob);
         
         const tagName = document.querySelector('#tagName').value.trim() || 'rectangle_tag';
-        const fileName = tagName.replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+        // Remove newlines and special chars for filename
+        const fileName = tagName.replace(/[\n\r]/g, '_').replace(/[^\w\u0E00-\u0E7F-]/g, '_');
         a.download = `${fileName}.stl`;
         
         a.click();
@@ -323,7 +326,8 @@ async function export3MF() {
         const exportScene = new THREE.Scene();
         exportScene.add(currentMesh.clone());
         if (textMesh) {
-            exportScene.add(textMesh.clone());
+            const clonedText = textMesh.clone(true); // true = deep clone for groups
+            exportScene.add(clonedText);
         }
 
         const exporter = new ThreeMFExporter();
@@ -338,7 +342,8 @@ async function export3MF() {
         a.href = URL.createObjectURL(blob);
         
         const tagName = document.querySelector('#tagName').value.trim() || 'rectangle_tag';
-        const fileName = tagName.replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+        // Remove newlines and special chars for filename
+        const fileName = tagName.replace(/[\n\r]/g, '_').replace(/[^\w\u0E00-\u0E7F-]/g, '_');
         a.download = `${fileName}.3mf`;
         
         a.click();
@@ -491,8 +496,56 @@ function createTextFromOpentype(text, fontSize, extrudeDepth) {
     // Compute bounding box for centering
     geometry.computeBoundingBox();
     const textWidth = geometry.boundingBox.max.x - geometry.boundingBox.min.x;
+    const textHeight = geometry.boundingBox.max.y - geometry.boundingBox.min.y;
     
-    return { geometry, textWidth };
+    return { geometry, textWidth, textHeight };
+}
+
+// Create multiline text geometry
+function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpentype) {
+    const group = new THREE.Group();
+    let maxWidth = 0;
+    const lineHeight = fontSize * lineSpacing;
+    const totalHeight = lines.length * lineHeight;
+    
+    lines.forEach((line, index) => {
+        if (!line.trim()) return; // Skip empty lines
+        
+        let lineGeometry = null;
+        let lineWidth = 0;
+        
+        if (useOpentype && opentypeFont) {
+            const result = createTextFromOpentype(line, fontSize, extrudeDepth);
+            if (result) {
+                lineGeometry = result.geometry;
+                lineWidth = result.textWidth;
+            }
+        } else if (loadedFont) {
+            lineGeometry = new TextGeometry(line, {
+                font: loadedFont,
+                size: fontSize,
+                height: extrudeDepth,
+                curveSegments: 12,
+                bevelEnabled: false
+            });
+            
+            lineGeometry.computeBoundingBox();
+            lineWidth = lineGeometry.boundingBox.max.x - lineGeometry.boundingBox.min.x;
+        }
+        
+        if (lineGeometry) {
+            const lineMesh = new THREE.Mesh(lineGeometry);
+            
+            // Position each line (centered horizontally, stacked vertically)
+            const yPos = (totalHeight / 2) - (index * lineHeight) - lineHeight / 2;
+            lineMesh.position.set(-lineWidth / 2, yPos, 0);
+            
+            group.add(lineMesh);
+            maxWidth = Math.max(maxWidth, lineWidth);
+        }
+    });
+    
+    return { group, maxWidth, totalHeight };
 }
 
 async function populateFontDropdown() {
