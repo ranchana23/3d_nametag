@@ -3,9 +3,29 @@ import * as THREE from 'https://esm.sh/three@0.168.0';
 import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/controls/OrbitControls.js';
 import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters/STLExporter.js';
 import { ThreeMFExporter } from './3MFExporter.js';
+import { TextGeometry } from 'https://esm.sh/three@0.168.0/examples/jsm/geometries/TextGeometry.js';
+import { FontLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/FontLoader.js';
 
 const MSG = document.querySelector('#msg');
 const DIM_TEXT = document.querySelector('#dim-text');
+
+// Font loader
+const fontLoader = new FontLoader();
+let loadedFont = null;
+
+// Load default font (Noto Sans Thai)
+fontLoader.load(
+    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json',
+    (font) => {
+        loadedFont = font;
+        MSG.textContent = '✅ โหลดฟอนต์สำเร็จ';
+    },
+    undefined,
+    (error) => {
+        console.error('Error loading font:', error);
+        MSG.textContent = '⚠️ โหลดฟอนต์ไม่สำเร็จ (ข้อความจะไม่แสดง)';
+    }
+);
 
 // Scene setup
 const canvas = document.querySelector('#view');
@@ -35,6 +55,7 @@ scene.add(grid);
 
 // Current mesh
 let currentMesh = null;
+let textMesh = null;
 
 // Create rounded rectangle shape
 function createRoundedRectShape(width, length, radius) {
@@ -115,12 +136,11 @@ function createRectangle() {
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.computeVertexNormals();
         
-        // Rotate geometry to lay flat (instead of rotating mesh)
-        // This ensures dimensions match: width=X, length=Y, height=Z
-        geometry.rotateX(-Math.PI / 2);
+        // Don't rotate geometry - keep it in standard orientation
+        // Width=X, Length=Y, Height=Z (extrude direction)
         
         // Center the geometry at origin for better manipulation
-        geometry.translate(0, height / 2, 0);
+        geometry.translate(0, 0, height / 2);
 
         // Create material
         const material = new THREE.MeshStandardMaterial({
@@ -137,6 +157,12 @@ function createRectangle() {
             currentMesh.geometry.dispose();
             currentMesh.material.dispose();
         }
+        if (textMesh) {
+            scene.remove(textMesh);
+            textMesh.geometry.dispose();
+            textMesh.material.dispose();
+            textMesh = null;
+        }
 
         // Create and add new mesh
         currentMesh = new THREE.Mesh(geometry, material);
@@ -146,8 +172,56 @@ function createRectangle() {
         
         scene.add(currentMesh);
 
+        // Create text if name is provided and font is loaded
+        const tagName = document.querySelector('#tagName').value.trim();
+        const textHeight = parseFloat(document.querySelector('#textHeight').value) || 4;
+        
+        if (tagName && loadedFont) {
+            try {
+                const textGeometry = new TextGeometry(tagName, {
+                    font: loadedFont,
+                    size: 5, // Font size
+                    height: textHeight, // Extrude height
+                    curveSegments: 12,
+                    bevelEnabled: false
+                });
+                
+                // Center text
+                textGeometry.computeBoundingBox();
+                const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+                
+                // Create text material (slightly different color)
+                const textMaterial = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(color).offsetHSL(0, 0, -0.1), // Slightly darker
+                    metalness: 0.1,
+                    roughness: 0.5,
+                    emissive: new THREE.Color(color),
+                    emissiveIntensity: 0.15
+                });
+                
+                textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                
+                // Position text on top of base (same coordinate system)
+                textMesh.position.set(-textWidth / 2, 0, height + textHeight / 2);
+                
+                // Apply the same rotation as the base from controls
+                const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
+                const rotY = parseFloat(document.querySelector('#rotateY').value) || 0;
+                const rotZ = parseFloat(document.querySelector('#rotateZ').value) || 0;
+                
+                textMesh.rotation.x = rotX * Math.PI / 180;
+                textMesh.rotation.y = rotY * Math.PI / 180;
+                textMesh.rotation.z = rotZ * Math.PI / 180;
+                
+                scene.add(textMesh);
+            } catch (e) {
+                console.error('Error creating text:', e);
+            }
+        }
+
         // Update dimension text
-        DIM_TEXT.textContent = `${width} × ${length} × ${height} mm`;
+        const totalHeight = height + (tagName && loadedFont ? textHeight : 0);
+        DIM_TEXT.textContent = `${width} × ${length} × ${totalHeight.toFixed(1)} mm`;
         MSG.textContent = '✅ สร้าง Rectangle สำเร็จ';
     } catch (e) {
         console.error(e);
@@ -167,12 +241,19 @@ function applyRotation() {
     currentMesh.rotation.x = rotX * Math.PI / 180;
     currentMesh.rotation.y = rotY * Math.PI / 180;
     currentMesh.rotation.z = rotZ * Math.PI / 180;
+    
+    // Apply same rotation to text if it exists
+    if (textMesh) {
+        textMesh.rotation.x = rotX * Math.PI / 180;
+        textMesh.rotation.y = rotY * Math.PI / 180;
+        textMesh.rotation.z = rotZ * Math.PI / 180;
+    }
 }
 
 // Reset rotation to zero
 function resetRotation() {
-    // Keep X rotation at 90 degrees (default orientation)
-    document.querySelector('#rotateX').value = 90;
+    // Reset all rotations to 0 (unified coordinate system)
+    document.querySelector('#rotateX').value = 0;
     document.querySelector('#rotateY').value = 0;
     document.querySelector('#rotateZ').value = 0;
     applyRotation();
@@ -188,11 +269,23 @@ function exportSTL() {
 
     try {
         const exporter = new STLExporter();
-        const stl = exporter.parse(currentMesh);
+        
+        // Create a temporary scene to export both base and text
+        const exportScene = new THREE.Scene();
+        exportScene.add(currentMesh.clone());
+        if (textMesh) {
+            exportScene.add(textMesh.clone());
+        }
+        
+        const stl = exporter.parse(exportScene);
         const blob = new Blob([stl], { type: 'model/stl' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'rectangle_tag.stl';
+        
+        const tagName = document.querySelector('#tagName').value.trim() || 'rectangle_tag';
+        const fileName = tagName.replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+        a.download = `${fileName}.stl`;
+        
         a.click();
         URL.revokeObjectURL(a.href);
         MSG.textContent = '✅ ส่งออก STL สำเร็จ';
@@ -213,8 +306,10 @@ async function export3MF() {
         MSG.textContent = '⏳ กำลังสร้างไฟล์ 3MF...';
         
         const exportScene = new THREE.Scene();
-        const clonedMesh = currentMesh.clone();
-        exportScene.add(clonedMesh);
+        exportScene.add(currentMesh.clone());
+        if (textMesh) {
+            exportScene.add(textMesh.clone());
+        }
 
         const exporter = new ThreeMFExporter();
         const blob = await exporter.parse(exportScene);
@@ -226,7 +321,11 @@ async function export3MF() {
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'rectangle_tag.3mf';
+        
+        const tagName = document.querySelector('#tagName').value.trim() || 'rectangle_tag';
+        const fileName = tagName.replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+        a.download = `${fileName}.3mf`;
+        
         a.click();
         URL.revokeObjectURL(a.href);
         
