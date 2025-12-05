@@ -96,6 +96,13 @@ function createRectangle() {
         // Create geometry
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.computeVertexNormals();
+        
+        // Rotate geometry to lay flat (instead of rotating mesh)
+        // This ensures dimensions match: width=X, length=Y, height=Z
+        geometry.rotateX(-Math.PI / 2);
+        
+        // Center the geometry at origin for better manipulation
+        geometry.translate(0, height / 2, 0);
 
         // Create material
         const material = new THREE.MeshStandardMaterial({
@@ -115,7 +122,10 @@ function createRectangle() {
 
         // Create and add new mesh
         currentMesh = new THREE.Mesh(geometry, material);
-        currentMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
+        
+        // Apply rotation from controls
+        applyRotation();
+        
         scene.add(currentMesh);
 
         // Update dimension text
@@ -125,6 +135,30 @@ function createRectangle() {
         console.error(e);
         MSG.textContent = '❌ เกิดข้อผิดพลาด: ' + e.message;
     }
+}
+
+// Apply rotation to current mesh
+function applyRotation() {
+    if (!currentMesh) return;
+    
+    const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
+    const rotY = parseFloat(document.querySelector('#rotateY').value) || 0;
+    const rotZ = parseFloat(document.querySelector('#rotateZ').value) || 0;
+    
+    // Convert degrees to radians
+    currentMesh.rotation.x = rotX * Math.PI / 180;
+    currentMesh.rotation.y = rotY * Math.PI / 180;
+    currentMesh.rotation.z = rotZ * Math.PI / 180;
+}
+
+// Reset rotation to zero
+function resetRotation() {
+    // Keep X rotation at 90 degrees (default orientation)
+    document.querySelector('#rotateX').value = 90;
+    document.querySelector('#rotateY').value = 0;
+    document.querySelector('#rotateZ').value = 0;
+    applyRotation();
+    MSG.textContent = '🔄 รีเซ็ตมุมหมุนแล้ว';
 }
 
 // Export STL
@@ -207,12 +241,20 @@ document.querySelectorAll('[data-view]').forEach(btn => {
 document.querySelector('#createRect').addEventListener('click', createRectangle);
 document.querySelector('#exportSTL').addEventListener('click', exportSTL);
 document.querySelector('#export3MF').addEventListener('click', export3MF);
+document.querySelector('#resetRotation').addEventListener('click', resetRotation);
 
-// Auto-update on input change
+// Rotation controls - update only rotation without recreating geometry
+document.querySelector('#rotateX').addEventListener('input', applyRotation);
+document.querySelector('#rotateY').addEventListener('input', applyRotation);
+document.querySelector('#rotateZ').addEventListener('input', applyRotation);
+
+// Auto-update on input change (except rotation inputs which are handled separately)
 document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('input', () => {
-        if (currentMesh) createRectangle();
-    });
+    if (!input.id.startsWith('rotate')) {
+        input.addEventListener('input', () => {
+            if (currentMesh) createRectangle();
+        });
+    }
 });
 
 // Animation loop

@@ -56,6 +56,23 @@
         </fieldset>
 
         <fieldset>
+            <legend>มุมหมุน (องศา)</legend>
+            <!-- Hidden: X rotation fixed at 90 degrees -->
+            <input type="hidden" id="rotateX" value="90">
+            <label>
+                หมุนแกน Y (Yaw):
+                <input type="number" id="rotateY" value="0" min="-180" max="180" step="1">
+            </label>
+            <label>
+                หมุนแกน Z (Roll):
+                <input type="number" id="rotateZ" value="0" min="-180" max="180" step="1">
+            </label>
+            <button class="btn secondary" id="resetRotation" style="width:100%;margin-top:8px;">
+                <i class="fa fa-refresh"></i> รีเซ็ตมุม
+            </button>
+        </fieldset>
+
+        <fieldset>
             <legend>รูแขวน (ถ้าต้องการ)</legend>
             <label>
                 <input type="checkbox" id="enableHole">
