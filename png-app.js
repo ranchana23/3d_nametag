@@ -5,6 +5,7 @@ import { STLExporter } from 'https://esm.sh/three@0.168.0/examples/jsm/exporters
 
 const MSG = document.querySelector('#msg');
 const INFO = document.querySelector('#info');
+const DIM_TEXT = document.querySelector('#dim-text');
 const canvas = document.querySelector('#preview');
 
 // Three.js setup
@@ -156,6 +157,9 @@ async function loadSTLPreview(stlBlob) {
     camera.lookAt(0, 0, 0);
     controls.target.set(0, 0, 0);
     controls.update();
+    
+    // Update dimension display
+    DIM_TEXT.textContent = `📐 ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} mm`;
 }
 
 // Parse binary STL
