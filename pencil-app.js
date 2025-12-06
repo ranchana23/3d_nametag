@@ -221,7 +221,12 @@ function createBase(textShapes, baseHeight, outlineMargin, holeOrientation, hole
     const evaluator = new Evaluator();
     const result = evaluator.evaluate(baseBrush, holeBrush, SUBTRACTION);
     
-    return result.geometry;
+    // Fix non-manifold edges by merging vertices and converting to non-indexed
+    let finalGeometry = result.geometry.clone();
+    finalGeometry = mergeVertices(finalGeometry);
+    finalGeometry = finalGeometry.toNonIndexed();
+    
+    return finalGeometry;
 }
 
 // Simple offset path (expand)
@@ -315,11 +320,15 @@ function createTopper() {
         scene.add(baseMesh);
         
         // Create raised letters
-        const lettersGeometry = new THREE.ExtrudeGeometry(textShapes, {
+        let lettersGeometry = new THREE.ExtrudeGeometry(textShapes, {
             depth: letterThickness,
             bevelEnabled: false,
             curveSegments: 12
         });
+        
+        // Fix non-manifold edges for letters
+        lettersGeometry = mergeVertices(lettersGeometry);
+        lettersGeometry = lettersGeometry.toNonIndexed();
         
         // Position letters on top of base
         lettersGeometry.translate(0, 0, baseHeight);
