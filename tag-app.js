@@ -660,6 +660,9 @@ async function populateFontDropdown() {
         console.warn('No font manifest, falling back to built-in FONT_LIST');
     }
 
+    // Filter เฉพาะฟ้อนต์จาก font/font_free เท่านั้น
+    fontPaths = fontPaths.filter(path => path.includes('font/font_free/'));
+
     // dedupe and normalize
     const seen = new Set();
     for (const fontPath of fontPaths) {
