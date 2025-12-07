@@ -101,9 +101,22 @@ h1 {
     letter-spacing: 0.3px;
 }
 
+h1 i, h2 i, h3 i {
+    color: var(--accent);
+    margin-right: 8px;
+}
+
 h2 {
     font-size: 20px;
     margin: 0 0 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+}
+
+h3 {
+    font-size: 18px;
+    margin: 0 0 14px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.3px;
