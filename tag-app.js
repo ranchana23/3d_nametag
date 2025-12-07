@@ -643,73 +643,98 @@ function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpen
 async function populateFontDropdown() {
     const listContainer = document.getElementById('fontDropdownList');
     const selectedDiv = document.getElementById('fontDropdownSelected');
+    const usePersonalCheckbox = document.getElementById('usePersonalFonts');
     
     // สร้าง style element สำหรับ @font-face
     const styleEl = document.createElement('style');
     document.head.appendChild(styleEl);
     
-    // Prefer manifest file if available
-    let fontPaths = FONT_LIST.slice();
-    try {
-        const resp = await fetch('font/manifest.json');
-        if (resp.ok) {
-            const manifest = await resp.json();
-            if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
-        }
-    } catch (e) {
-        console.warn('No font manifest, falling back to built-in FONT_LIST');
-    }
-
-    // dedupe and normalize
-    const seen = new Set();
-    for (const fontPath of fontPaths) {
-        if (!fontPath || seen.has(fontPath)) continue;
-        seen.add(fontPath);
-        const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
-        const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    async function loadFonts() {
+        // ลบรายการเดิม
+        listContainer.innerHTML = '';
+        styleEl.textContent = '';
         
-        // สร้าง @font-face rule
-        const fontFaceRule = `
-            @font-face {
-                font-family: '${fontFamilyName}';
-                src: url('${fontPath}');
-                font-display: swap;
+        // กำหนด path ตามการเลือก
+        const isPersonal = usePersonalCheckbox.checked;
+        const manifestPath = isPersonal ? 'font_personal/manifest.json' : 'font/manifest.json';
+        const filterPath = isPersonal ? 'font_personal/' : 'font/font_free/';
+        
+        // Prefer manifest file if available
+        let fontPaths = FONT_LIST.slice();
+        try {
+            const resp = await fetch(manifestPath);
+            if (resp.ok) {
+                const manifest = await resp.json();
+                if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
             }
-        `;
-        styleEl.textContent += fontFaceRule;
-        
-        // สร้าง custom option
-        const item = document.createElement('div');
-        item.className = 'custom-select-item';
-        item.textContent = fileName;
-        item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
-        item.dataset.value = fontPath;
-        item.dataset.fontName = fileName;
-        
-        // Click event
-        item.addEventListener('click', async () => {
-            // Remove previous selection
-            listContainer.querySelectorAll('.custom-select-item').forEach(el => {
-                el.classList.remove('selected');
+        } catch (e) {
+            console.warn('No font manifest, falling back to built-in FONT_LIST');
+        }
+
+        // Filter เฉพาะฟ้อนต์ตาม path ที่เลือก
+        fontPaths = fontPaths.filter(path => path.includes(filterPath));
+
+        // dedupe and normalize
+        const seen = new Set();
+        for (const fontPath of fontPaths) {
+            if (!fontPath || seen.has(fontPath)) continue;
+            seen.add(fontPath);
+            const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
+            const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            
+            // สร้าง @font-face rule
+            const fontFaceRule = `
+                @font-face {
+                    font-family: '${fontFamilyName}';
+                    src: url('${fontPath}');
+                    font-display: swap;
+                }
+            `;
+            styleEl.textContent += fontFaceRule;
+            
+            // สร้าง custom option
+            const item = document.createElement('div');
+            item.className = 'custom-select-item';
+            item.textContent = fileName;
+            item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
+            item.dataset.value = fontPath;
+            item.dataset.fontName = fileName;
+            
+            // Click event
+            item.addEventListener('click', async () => {
+                // Remove previous selection
+                listContainer.querySelectorAll('.custom-select-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                // Mark as selected
+                item.classList.add('selected');
+                
+                // Update selected display
+                selectedDiv.textContent = fileName;
+                selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
+                
+                // Hide dropdown
+                listContainer.style.display = 'none';
+                selectedDiv.classList.remove('active');
+                
+                // Load font
+                await loadFontFromPath(fontPath);
             });
             
-            // Mark as selected
-            item.classList.add('selected');
-            
-            // Update selected display
-            selectedDiv.textContent = fileName;
-            selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
-            
-            // Hide dropdown
-            listContainer.style.display = 'none';
-            selectedDiv.classList.remove('active');
-            
-            // Load font
-            await loadFontFromPath(fontPath);
-        });
-        
-        listContainer.appendChild(item);
+            listContainer.appendChild(item);
+        }
     }
+    
+    // โหลดฟ้อนต์ครั้งแรก
+    await loadFonts();
+    
+    // Event listener สำหรับ checkbox
+    usePersonalCheckbox.addEventListener('change', async () => {
+        await loadFonts();
+        selectedDiv.textContent = 'Helvetiker (Default)';
+        selectedDiv.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
+    });
     
     // Toggle dropdown visibility
     selectedDiv.addEventListener('click', (e) => {
