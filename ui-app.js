@@ -875,11 +875,12 @@ async function buildGeometries() {
             const rHole = c.holeDiameter * 0.5;
             const rHoleFU = rHole / c.mmPerUnit;
 
-            const wallFU = (c.earRingThickness / c.mmPerUnit) || 0; // ระยะจากขอบกรอบ
+            // ใช้ earAttachOverlap เป็นระยะห่างจากขอบกรอบ (ซ้อนเข้าฐาน)
+            const insetFU = (c.earAttachOverlap / c.mmPerUnit) || 0;
             const yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
             const cxFU = (c.earSide === 'right')
-                ? (maxX - wallFU - rHoleFU)
-                : (minX + wallFU + rHoleFU);
+                ? (maxX - insetFU - rHoleFU)
+                : (minX + insetFU + rHoleFU);
 
             // รูจริงเพียง "วงเดียว" และทำเป็น clockwise เพื่อเป็น hole ชัดเจน
             const inner = new THREE.Path();
