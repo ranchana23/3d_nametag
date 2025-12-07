@@ -514,6 +514,11 @@ async function populateFontDropdown() {
     const selectedDiv = document.getElementById('fontDropdownSelected');
     const usePersonalCheckbox = document.getElementById('usePersonalFonts');
     
+    // Move dropdown list to body to prevent stacking context issues
+    if (listContainer && listContainer.parentElement.id === 'fontDropdownWrapper') {
+        document.body.appendChild(listContainer);
+    }
+    
     // สร้าง style element สำหรับ @font-face
     const styleEl = document.createElement('style');
     document.head.appendChild(styleEl);
@@ -620,6 +625,7 @@ async function populateFontDropdown() {
     });
     
     // Toggle dropdown with position calculation
+    const wrapperDiv = document.getElementById('fontDropdownWrapper');
     selectedDiv.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = listContainer.style.display === 'block';
@@ -632,9 +638,11 @@ async function populateFontDropdown() {
             listContainer.style.width = `${rect.width}px`;
             listContainer.style.display = 'block';
             selectedDiv.classList.add('active');
+            wrapperDiv.classList.add('active');
         } else {
             listContainer.style.display = 'none';
             selectedDiv.classList.remove('active');
+            wrapperDiv.classList.remove('active');
         }
     });
     
@@ -655,6 +663,7 @@ async function populateFontDropdown() {
         if (!e.target.closest('#fontDropdownWrapper')) {
             listContainer.style.display = 'none';
             selectedDiv.classList.remove('active');
+            wrapperDiv.classList.remove('active');
         }
     });
     

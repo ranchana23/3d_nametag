@@ -511,6 +511,11 @@ async function populateFontDropdown() {
     const selectedDiv = document.getElementById('fontDropdownSelected');
     const usePersonalCheckbox = document.getElementById('usePersonalFonts');
     
+    // Move dropdown list to body to prevent stacking context issues
+    if (listContainer && listContainer.parentElement.id === 'fontDropdownWrapper') {
+        document.body.appendChild(listContainer);
+    }
+    
     const styleEl = document.createElement('style');
     document.head.appendChild(styleEl);
     
@@ -590,16 +595,19 @@ async function populateFontDropdown() {
         selectedDiv.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
     });
     
+    const wrapperDiv = document.getElementById('fontDropdownWrapper');
     selectedDiv.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = listContainer.style.display === 'block';
         listContainer.style.display = isVisible ? 'none' : 'block';
         selectedDiv.classList.toggle('active', !isVisible);
+        wrapperDiv.classList.toggle('active', !isVisible);
     });
     
     document.addEventListener('click', () => {
         listContainer.style.display = 'none';
         selectedDiv.classList.remove('active');
+        wrapperDiv.classList.remove('active');
     });
 }
 

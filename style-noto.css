@@ -76,6 +76,8 @@ aside {
     background: #ffffff;
     box-shadow: var(--shadow);
     overflow: auto;
+    position: relative;
+    z-index: 1;
 }
 
 main {
@@ -130,18 +132,23 @@ fieldset {
     padding: 16px 14px 12px 14px;
     margin: 18px 0;
     background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
     box-shadow: 0 4px 16px rgba(119,136,115,0.12);
     color: var(--text-primary);
     overflow: visible;
     position: relative;
-    z-index: auto;
+    z-index: 1;
     transition: all 0.3s ease;
 }
 
 fieldset:hover {
     box-shadow: 0 6px 20px rgba(119,136,115,0.18);
-    transform: translateY(-2px);
+    /* Removed transform to prevent stacking context issues with dropdown */
+}
+
+/* Lower z-index for fieldsets when dropdown is active */
+.custom-select-wrapper.active ~ fieldset,
+fieldset:has(.custom-select-wrapper.active) ~ fieldset {
+    z-index: 0;
 }
 
 legend {
@@ -279,8 +286,13 @@ input[type="file"] {
     max-width: 100%;
     margin-bottom: 10px;
     overflow: visible;
-    z-index: 100000;
+    z-index: 100;
     box-sizing: border-box;
+}
+
+.custom-select-wrapper.active {
+    z-index: 9999999;
+    position: relative;
 }
 
 .custom-select-selected {
@@ -316,19 +328,26 @@ input[type="file"] {
     border-color: var(--primary);
     background-color: #fff;
     box-shadow: 0 0 0 3px rgba(161,188,152,0.2), 0 4px 16px rgba(119,136,115,0.2);
-    z-index: 100002;
+    z-index: 9999998;
+    position: relative;
 }
 
 .custom-select-items {
-    position: fixed;
+    position: fixed !important;
     max-height: 350px;
     overflow-y: auto;
     background: #ffffff;
     border: 2px solid var(--accent);
     border-radius: 12px;
     box-shadow: 0 12px 32px rgba(119,136,115,0.3);
-    z-index: 999999;
+    z-index: 999999999 !important;
     animation: dropdownSlideIn 0.2s ease;
+    pointer-events: auto;
+    display: none;
+}
+
+.custom-select-items[style*="display: block"] {
+    display: block !important;
 }
 
 @keyframes dropdownSlideIn {
