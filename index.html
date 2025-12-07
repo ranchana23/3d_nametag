@@ -35,10 +35,14 @@
     </nav>
 
     <aside>
-        <h1>Nametag Generator by Ranchana</h1>
+        <h1>🏷️ Nametag Generator</h1>
         <div class="row" style="margin-bottom:16px;">
-            <button id="add" class="btn secondary">Add</button>
-            <button id="exportSTL" class="btn" style="margin-left:8px;">Export STL</button>
+            <button id="add" class="btn secondary">
+                <i class="fa fa-plus"></i> เพิ่ม
+            </button>
+            <button id="exportSTL" class="btn" style="margin-left:8px;">
+                <i class="fa fa-download"></i> Export STL
+            </button>
         </div>
 
         <fieldset>
@@ -213,18 +217,18 @@
     <main style="position:relative;">
         <canvas id="view"></canvas>
         <div id="layer-list-panel" style="position:absolute;bottom:20px;right:20px;z-index:10;background:rgba(255,255,255,0.95);border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(105,111,199,0.15);backdrop-filter:blur(10px);min-width:240px;border:2px solid rgba(167,170,225,0.3);">
-            <h3 style="margin-top:0;margin-bottom:12px;font-size:1.1em;color:#696FC7;font-weight:700;">Layers</h3>
+            <h3 style="margin-top:0;margin-bottom:12px;font-size:1.1em;color:var(--text-primary);font-weight:700;">📋 Layers</h3>
             <div id="layer-list"></div>
             <div style="margin-top:10px;text-align:right;">
-                <div id="dim-text" style="display:inline-block;background:#696FC7;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(105,111,199,0.2);">--</div>
+                <div id="dim-text" style="display:inline-block;background:linear-gradient(135deg, #778873 0%, #A1BC98 100%);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(119,136,115,0.3);">--</div>
             </div>
         </div>
-        <div id="viewport-controls" style="position:absolute;top:20px;right:20px;z-index:10;display:flex;gap:12px;background:rgba(255,255,255,0.95);padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(105,111,199,0.15);backdrop-filter:blur(10px);">
-            <button class="btn secondary" data-view="top" title="Top" style="padding:10px 18px;font-size:14px;min-width:70px;">Top</button>
-            <button class="btn secondary" data-view="front" title="Front" style="padding:10px 18px;font-size:14px;min-width:70px;">Front</button>
-            <button class="btn secondary" data-view="side" title="Side" style="padding:10px 18px;font-size:14px;min-width:70px;">Side</button>
-            <button class="btn secondary" data-view="back" title="Back" style="padding:10px 18px;font-size:14px;min-width:70px;">Back</button>
-            <button class="btn secondary" data-view="bottom" title="Bottom" style="padding:10px 18px;font-size:14px;min-width:70px;">Bottom</button>
+        <div id="viewport-controls" style="position:absolute;top:20px;right:20px;z-index:10;display:flex;gap:10px;background:rgba(255,255,255,0.95);padding:14px 18px;border-radius:16px;box-shadow:0 6px 20px rgba(119,136,115,0.2);backdrop-filter:blur(10px);">
+            <button class="btn secondary" data-view="top" title="Top" style="padding:10px 18px;font-size:14px;min-width:70px;">🔝 Top</button>
+            <button class="btn secondary" data-view="front" title="Front" style="padding:10px 18px;font-size:14px;min-width:70px;">👁️ Front</button>
+            <button class="btn secondary" data-view="side" title="Side" style="padding:10px 18px;font-size:14px;min-width:70px;">➡️ Side</button>
+            <button class="btn secondary" data-view="back" title="Back" style="padding:10px 18px;font-size:14px;min-width:70px;">🔙 Back</button>
+            <button class="btn secondary" data-view="bottom" title="Bottom" style="padding:10px 18px;font-size:14px;min-width:70px;">⬇️ Bottom</button>
         </div>
     </main>
 

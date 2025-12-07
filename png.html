@@ -29,7 +29,7 @@
     </nav>
 
     <aside>
-        <h2>PNG to 3D Converter</h2>
+        <h2>🖼️ PNG to 3D Converter</h2>
         
         <fieldset>
             <legend>อัพโหลดรูปภาพ</legend>
@@ -95,7 +95,7 @@
         </fieldset>
 
         <button class="btn" id="generateBtn">
-            <i class="fa fa-cube"></i> สร้างโมเดล 3D
+            <i class="fa fa-magic"></i> สร้างโมเดล 3D
         </button>
 
         <fieldset style="margin-top:20px;">
@@ -106,12 +106,12 @@
         </fieldset>
 
         <div id="msg" class="muted" style="margin-top:12px;"></div>
-        <div id="info" style="margin-top:12px;font-size:13px;color:#666;"></div>
-        <div id="dim-text" style="margin-top:8px;font-size:14px;font-weight:600;color:#696FC7;"></div>
+        <div id="info" style="margin-top:12px;font-size:13px;color:var(--text-secondary);"></div>
+        <div id="dim-text" style="margin-top:8px;padding:10px 16px;background:linear-gradient(135deg, #778873 0%, #A1BC98 100%);color:#fff;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(119,136,115,0.3);"></div>
     </aside>
 
     <main>
-        <canvas id="preview" style="width:100%;height:100%;display:block;background:#f7f7f8;"></canvas>
+        <canvas id="preview" style="width:100%;height:100%;display:block;background:transparent;"></canvas>
     </main>
 
     <script src="png-to-stl.js"></script>
