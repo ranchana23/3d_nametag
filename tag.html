@@ -78,27 +78,37 @@
             <div class="muted">เลือกจาก dropdown หรืออัพโหลดฟอนต์ของคุณเอง</div>
 
             <!-- Text Position Controls -->
-            <div style="margin-top:8px;border-top:1px solid var(--line);padding-top:10px;">
-                <label style="margin-bottom:6px;font-weight:700;">ตำแหน่งข้อความ</label>
-                <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-                    <div style="display:flex;gap:6px;">
-                        <button type="button" id="nudgeUp" class="btn secondary" style="padding:8px 10px;min-width:40px;">↑</button>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:6px;">
-                        <div style="display:flex;gap:6px;">
-                            <button type="button" id="nudgeLeft" class="btn secondary" style="padding:8px 10px;min-width:40px;">←</button>
-                            <button type="button" id="nudgeRight" class="btn secondary" style="padding:8px 10px;min-width:40px;">→</button>
+            <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px;">
+                <label style="margin-bottom:10px;font-weight:700;display:block;">ตำแหน่งข้อความ</label>
+                <div style="background:rgba(161,188,152,0.08);padding:12px;border-radius:12px;border:1px solid var(--line);">
+                    <div style="display:flex;gap:16px;margin-bottom:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+                        <!-- Control Buttons -->
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <!-- ซ้าย-ขวา -->
+                            <div style="display:flex;gap:6px;align-items:center;background:rgba(255,255,255,0.7);padding:6px;border-radius:8px;">
+                                <button type="button" id="nudgeLeft" class="btn secondary" style="padding:10px 12px;min-width:44px;font-size:16px;">←</button>
+                                <button type="button" id="nudgeRight" class="btn secondary" style="padding:10px 12px;min-width:44px;font-size:16px;">→</button>
+                            </div>
+                            <!-- บน-ล่าง -->
+                            <div style="display:flex;gap:6px;align-items:center;background:rgba(255,255,255,0.7);padding:6px;border-radius:8px;">
+                                <button type="button" id="nudgeUp" class="btn secondary" style="padding:10px 12px;min-width:44px;font-size:16px;">↑</button>
+                                <button type="button" id="nudgeDown" class="btn secondary" style="padding:10px 12px;min-width:44px;font-size:16px;">↓</button>
+                            </div>
                         </div>
-                        <div style="display:flex;gap:6px;justify-content:center;">
-                            <button type="button" id="nudgeDown" class="btn secondary" style="padding:8px 10px;min-width:40px;">↓</button>
+                        <!-- Offset inputs -->
+                        <div style="display:flex;gap:10px;align-items:center;background:rgba(255,255,255,0.7);padding:8px 12px;border-radius:8px;">
+                            <label style="font-size:13px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                                <span>X:</span>
+                                <input type="number" id="offsetX" value="0" step="0.1" style="width:65px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;">
+                            </label>
+                            <label style="font-size:13px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+                                <span>Y:</span>
+                                <input type="number" id="offsetY" value="0" step="0.1" style="width:65px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;">
+                            </label>
                         </div>
                     </div>
-                    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-                        <label style="font-size:13px;">Offset X (mm): <input type="number" id="offsetX" value="0" step="0.1" style="width:90px;margin-left:6px;padding:6px;border-radius:8px;border:1px solid var(--line);"></label>
-                        <label style="font-size:13px;">Offset Y (mm): <input type="number" id="offsetY" value="0" step="0.1" style="width:90px;margin-left:6px;padding:6px;border-radius:8px;border:1px solid var(--line);"></label>
-                    </div>
+                    <div class="muted" style="font-size:12px;margin-top:4px;">💡 ใช้ปุ่มลูกศรเพื่อเลื่อนตำแหน่ง หรือกรอกค่า X, Y (หน่วย: mm)</div>
                 </div>
-                <div class="muted">ใช้ปุ่มเลื่อนหรือกรอกค่า offset เพื่อจัดตำแหน่งข้อความบนแท็ก</div>
             </div>
         </fieldset>
         
