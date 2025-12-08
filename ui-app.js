@@ -810,8 +810,8 @@ async function buildGeometries() {
             let cxMM, yCenterMM;
 
             if (c.earSide === 'top') {
-                // Top placement: Center X horizontally, Y at top edge
-                cxMM = ((minX + maxX) / 2) * c.mmPerUnit;
+                // Top placement: Center X horizontally + shift, Y at top edge
+                cxMM = ((minX + maxX) / 2) * c.mmPerUnit + c.earYShift;
                 // Note: In SVG coords (Y-down), minY is the "top" visual edge.
                 // To place above, we subtract radius (move to smaller Y).
                 yCenterMM = (minY * c.mmPerUnit) - rOuterMM + attachMM;
@@ -946,7 +946,7 @@ async function buildGeometries() {
             let cxFU, yCenterFU;
 
             if (c.earSide === 'top') {
-                cxFU = (minX + maxX) / 2;
+                cxFU = (minX + maxX) / 2 + (c.earYShift / c.mmPerUnit);
                 // Top inside: minY + inset + radius
                 yCenterFU = minY + insetFU + rHoleFU;
             } else {
@@ -976,7 +976,7 @@ async function buildGeometries() {
             let cxFU, yCenterFU;
 
             if (c.earSide === 'top') {
-                cxFU = (minX + maxX) / 2;
+                cxFU = (minX + maxX) / 2 + (c.earYShift / c.mmPerUnit);
                 // Top outside: minY - rOuter + attach
                 yCenterFU = minY - rOuterFU + attachFU;
             } else {
