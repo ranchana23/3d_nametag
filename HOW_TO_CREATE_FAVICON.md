@@ -8,7 +8,7 @@
 ## วิธีที่ 1: ใช้เว็บไซต์ออนไลน์ (แนะนำ - ง่ายที่สุด)
 
 1. ไปที่ https://realfavicongenerator.net/
-2. อัพโหลดไฟล์ `favicon.svg` ที่สร้างไว้
+2. อัพโหลดไฟล์ `favicon.png` ที่สร้างไว้
 3. กด "Generate your Favicons and HTML code"
 4. ดาวน์โหลดไฟล์ทั้งหมดและวางในโฟลเดอร์โปรเจค
 
@@ -28,9 +28,9 @@
 brew install imagemagick  # สำหรับ macOS
 
 # แปลง SVG เป็น PNG ในขนาดต่างๆ
-convert -background none favicon.svg -resize 16x16 favicon-16x16.png
-convert -background none favicon.svg -resize 32x32 favicon-32x32.png
-convert -background none favicon.svg -resize 180x180 apple-touch-icon.png
+convert -background none favicon.png -resize 16x16 favicon-16x16.png
+convert -background none favicon.png -resize 32x32 favicon-32x32.png
+convert -background none favicon.png -resize 180x180 apple-touch-icon.png
 ```
 
 ## วิธีที่ 4: ใช้รูป PNG ที่มีอยู่แล้ว
