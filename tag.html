@@ -129,8 +129,12 @@
         <fieldset>
             <legend>สี</legend>
             <label>
-                สีของแท็ก:
-                <input type="color" id="rectColor" value="#696FC7">
+                สีฐาน (Base Color):
+                <input type="color" id="rectColor" value="#FFFFFF">
+            </label>
+            <label>
+                สีข้อความ (Text Color):
+                <input type="color" id="textColor" value="#000000">
             </label>
         </fieldset>
 
@@ -191,18 +195,19 @@
         <fieldset>
             <legend>Export</legend>
             <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                <input type="checkbox" id="mergeGeometry" checked>
+                <input type="checkbox" id="mergeGeometry">
                 <span>รวม Geometry (Merge เป็นชิ้นเดียว)</span>
             </label>
             <div class="muted" style="margin-bottom:12px;font-size:12px;">
-                ✅ Merge: ปริ้นท์แข็งแรง แต่อาจมี non-manifold edges<br>
-                ❌ No Merge: แยกชิ้น (base + text) แต่ manifold 100%
+                🎨 <strong>แนะนำ: ปิด Merge</strong> เพื่อ Export 3MF แบบ 2 สี (base + text แยกกัน)<br>
+                ✅ Merge: ปริ้นท์แข็งแรง แต่เป็นสีเดียว + อาจมี non-manifold edges<br>
+                ❌ No Merge: แยกชิ้น (base + text) รองรับ Multi-Color และ manifold 100%
             </div>
             <button class="btn secondary" id="exportSTL">
                 <i class="fa fa-download"></i> Export STL
             </button>
             <button class="btn secondary" id="export3MF" style="margin-top: 8px;">
-                <i class="fa fa-cube"></i> Export 3MF
+                <i class="fa fa-cube"></i> Export 3MF (Multi-Color)
             </button>
         </fieldset>
 

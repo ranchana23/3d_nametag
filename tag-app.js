@@ -180,6 +180,7 @@ function createRectangle() {
 
         // Create and add new mesh
         currentMesh = new THREE.Mesh(geometry, material);
+        currentMesh.name = 'base'; // Set name for 3MF export
         
         // Apply rotation from controls
         applyRotation();
@@ -201,12 +202,15 @@ function createRectangle() {
                 const result = createMultilineText(lines, fontSize, lineSpacing, textHeight, useOpentype);
                 
                 if (result.group.children.length > 0) {
-                    // Create text material (slightly different color)
+                    // Get text color from UI (separate from base color)
+                    const textColorValue = document.querySelector('#textColor')?.value || color;
+                    
+                    // Create text material with user-selected color
                     const textMaterial = new THREE.MeshStandardMaterial({
-                        color: new THREE.Color(color).offsetHSL(0, 0, -0.1), // Slightly darker
+                        color: new THREE.Color(textColorValue),
                         metalness: 0.1,
                         roughness: 0.5,
-                        emissive: new THREE.Color(color),
+                        emissive: new THREE.Color(textColorValue),
                         emissiveIntensity: 0.15
                     });
                     
@@ -214,6 +218,7 @@ function createRectangle() {
                     result.group.traverse((child) => {
                         if (child instanceof THREE.Mesh) {
                             child.material = textMaterial;
+                            child.name = 'text'; // Set name for 3MF export
                         }
                     });
                     
@@ -234,6 +239,7 @@ function createRectangle() {
                     result.group.rotation.z = rotZ * Math.PI / 180;
                     
                     textMesh = result.group;
+                    textMesh.name = 'text_group'; // Set group name for 3MF export
                     scene.add(textMesh);
                 }
             } catch (e) {
@@ -443,7 +449,7 @@ async function export3MF() {
             exportTarget.material.dispose();
         }
         
-        const mode = shouldMerge ? '(Merged)' : '(Separate Objects)';
+        const mode = shouldMerge ? '(Merged)' : '(Separate Objects - Multi-Color)';
         MSG.textContent = `✅ ส่งออก 3MF สำเร็จ ${mode}`;
     } catch (e) {
         console.error(e);
