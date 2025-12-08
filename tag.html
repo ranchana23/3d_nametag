@@ -76,6 +76,30 @@
             <label>หรืออัพโหลดฟอนต์เอง (.ttf/.otf)</label>
             <input id="fontUpload" type="file" accept=".ttf,.otf" />
             <div class="muted">เลือกจาก dropdown หรืออัพโหลดฟอนต์ของคุณเอง</div>
+
+            <!-- Text Position Controls -->
+            <div style="margin-top:8px;border-top:1px solid var(--line);padding-top:10px;">
+                <label style="margin-bottom:6px;font-weight:700;">ตำแหน่งข้อความ</label>
+                <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                    <div style="display:flex;gap:6px;">
+                        <button type="button" id="nudgeUp" class="btn secondary" style="padding:8px 10px;min-width:40px;">↑</button>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <div style="display:flex;gap:6px;">
+                            <button type="button" id="nudgeLeft" class="btn secondary" style="padding:8px 10px;min-width:40px;">←</button>
+                            <button type="button" id="nudgeRight" class="btn secondary" style="padding:8px 10px;min-width:40px;">→</button>
+                        </div>
+                        <div style="display:flex;gap:6px;justify-content:center;">
+                            <button type="button" id="nudgeDown" class="btn secondary" style="padding:8px 10px;min-width:40px;">↓</button>
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                        <label style="font-size:13px;">Offset X (mm): <input type="number" id="offsetX" value="0" step="0.1" style="width:90px;margin-left:6px;padding:6px;border-radius:8px;border:1px solid var(--line);"></label>
+                        <label style="font-size:13px;">Offset Y (mm): <input type="number" id="offsetY" value="0" step="0.1" style="width:90px;margin-left:6px;padding:6px;border-radius:8px;border:1px solid var(--line);"></label>
+                    </div>
+                </div>
+                <div class="muted">ใช้ปุ่มเลื่อนหรือกรอกค่า offset เพื่อจัดตำแหน่งข้อความบนแท็ก</div>
+            </div>
         </fieldset>
         
         <fieldset>

@@ -21,7 +21,8 @@ body {
     background: linear-gradient(135deg, #F1F3E0 0%, #E8EDD4 100%);
     margin: 0;
     display: grid;
-    grid-template-columns: 60px 340px 1fr;
+    /* Increase aside column so controls don't cause horizontal scroll */
+    grid-template-columns: 60px 420px 1fr;
     height: 100vh;
 }
 
@@ -71,13 +72,17 @@ body {
 }
 
 aside {
-    padding: 18px 16px 14px 16px;
+    padding: 18px 18px 14px 18px;
     border-right: 1px solid var(--line);
     background: #ffffff;
     box-shadow: var(--shadow);
-    overflow: auto;
+    /* allow vertical scroll only, hide horizontal overflow */
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     z-index: 1;
+    min-width: 380px;
+    box-sizing: border-box;
 }
 
 main {
@@ -177,7 +182,8 @@ input[type="text"],
 input[type="number"],
 select,
 textarea {
-    width: calc(100% - 8px);
+    /* fill container and use box-sizing to avoid overflow */
+    width: 100%;
     padding: 12px 14px;
     border: 2px solid var(--line);
     border-radius: 12px;

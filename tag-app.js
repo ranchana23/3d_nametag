@@ -219,7 +219,10 @@ function createRectangle() {
                     
                     // Position text group on top of base (overlap slightly for manifold merge)
                     // Subtract 0.1mm to ensure text overlaps with base
-                    result.group.position.set(0, 0, height + textHeight / 2 - 0.1);
+                    // Apply user offsets (offsetX moves X axis, offsetY moves Y axis)
+                    const offX = (document.getElementById('offsetX') ? parseFloat(document.getElementById('offsetX').value) : 0) || 0;
+                    const offY = (document.getElementById('offsetY') ? parseFloat(document.getElementById('offsetY').value) : 0) || 0;
+                    result.group.position.set(offX, offY, height + textHeight / 2 - 0.1);
                     
                     // Apply the same rotation as the base from controls
                     const rotX = parseFloat(document.querySelector('#rotateX').value) || 0;
@@ -464,6 +467,54 @@ document.querySelectorAll('[data-view]').forEach(btn => {
         }
         controls.update();
     });
+
+    // ---------------- Text position controls ----------------
+    // Read offset inputs and nudge buttons from DOM and re-create geometry on change
+    const offsetXInput = document.getElementById('offsetX');
+    const offsetYInput = document.getElementById('offsetY');
+    const nudgeLeftBtn = document.getElementById('nudgeLeft');
+    const nudgeRightBtn = document.getElementById('nudgeRight');
+    const nudgeUpBtn = document.getElementById('nudgeUp');
+    const nudgeDownBtn = document.getElementById('nudgeDown');
+    const NUDGE_STEP = 0.5; // mm per nudge
+
+    function parseOffset(el) {
+        if (!el) return 0;
+        const v = parseFloat(el.value);
+        return isNaN(v) ? 0 : v;
+    }
+
+    function applyOffsetChange() {
+        // Only recreate if a model exists (keeps UX snappy)
+        if (typeof createRectangle === 'function') {
+            createRectangle();
+        }
+    }
+
+    if (offsetXInput) offsetXInput.addEventListener('input', applyOffsetChange);
+    if (offsetYInput) offsetYInput.addEventListener('input', applyOffsetChange);
+
+    if (nudgeLeftBtn) nudgeLeftBtn.addEventListener('click', () => {
+        const cur = parseOffset(offsetXInput);
+        offsetXInput.value = (cur - NUDGE_STEP).toFixed(2);
+        applyOffsetChange();
+    });
+    if (nudgeRightBtn) nudgeRightBtn.addEventListener('click', () => {
+        const cur = parseOffset(offsetXInput);
+        offsetXInput.value = (cur + NUDGE_STEP).toFixed(2);
+        applyOffsetChange();
+    });
+    if (nudgeUpBtn) nudgeUpBtn.addEventListener('click', () => {
+        const cur = parseOffset(offsetYInput);
+        offsetYInput.value = (cur + NUDGE_STEP).toFixed(2);
+        applyOffsetChange();
+    });
+    if (nudgeDownBtn) nudgeDownBtn.addEventListener('click', () => {
+        const cur = parseOffset(offsetYInput);
+        offsetYInput.value = (cur - NUDGE_STEP).toFixed(2);
+        applyOffsetChange();
+    });
+
 });
 
 // ============= Font Management =============
