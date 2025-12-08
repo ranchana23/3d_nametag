@@ -40,7 +40,7 @@ window.addEventListener('DOMContentLoaded', () => {
             toggleBtn.style.float = 'right';
             toggleBtn.style.marginLeft = '8px';
             toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
-            
+
             // hover effect
             toggleBtn.addEventListener('mouseenter', () => {
                 toggleBtn.style.background = '#F2AEBB';
@@ -54,13 +54,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 toggleBtn.style.transform = 'translateY(0)';
                 toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
             });
-            
+
             // click event - add เฉพาะครั้งแรกที่สร้างปุ่ม
             toggleBtn.addEventListener('click', () => {
                 const list = document.getElementById('layer-list');
                 list.style.display = (list.style.display === 'none') ? 'block' : 'none';
             });
-            
+
             panel.querySelector('h3').appendChild(toggleBtn);
         }
     }
@@ -168,7 +168,7 @@ function renderLayerList() {
     const list = document.getElementById("layer-list");
     if (!list) return;
     list.innerHTML = "";
-    layers.forEach(function(layer, idx) {
+    layers.forEach(function (layer, idx) {
         const layerDiv = document.createElement('div');
         layerDiv.className = 'layer-item';
         // เพิ่ม state สำหรับการแก้ไขชื่อ
@@ -207,76 +207,76 @@ function renderLayerList() {
                 }
             });
         }
-    // ...existing code...
-// Raycaster for mesh selection
-const raycaster = new THREE.Raycaster();
-let mouse = new THREE.Vector2();
-let currentTransform = null;
-canvas.addEventListener('pointerdown', function(event) {
-    // Calculate mouse position in normalized device coordinates (-1 to +1)
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    // Prevent selection if TransformControls is currently dragging
-    if (currentTransform && currentTransform.dragging) return;
-    // Only test visible meshes in layers
-    const meshes = layers.filter(l => l.visible).map(l => l.mesh);
-    const intersects = raycaster.intersectObjects(meshes);
-    if (intersects.length > 0) {
-        const mesh = intersects[0].object;
-        // Remove previous TransformControls
-        if (currentTransform) {
-            scene.remove(currentTransform);
-            currentTransform.dispose();
-            currentTransform = null;
-        }
-        // Attach TransformControls to selected mesh
-        currentTransform = new TransformControls(camera, renderer.domElement);
-        currentTransform.attach(mesh);
-        scene.add(currentTransform);
-        currentTransform.addEventListener('dragging-changed', function(e) {
-            controls.enabled = !e.value;
-            currentTransform.dragging = e.value;
+        // ...existing code...
+        // Raycaster for mesh selection
+        const raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let currentTransform = null;
+        canvas.addEventListener('pointerdown', function (event) {
+            // Calculate mouse position in normalized device coordinates (-1 to +1)
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            // Prevent selection if TransformControls is currently dragging
+            if (currentTransform && currentTransform.dragging) return;
+            // Only test visible meshes in layers
+            const meshes = layers.filter(l => l.visible).map(l => l.mesh);
+            const intersects = raycaster.intersectObjects(meshes);
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                // Remove previous TransformControls
+                if (currentTransform) {
+                    scene.remove(currentTransform);
+                    currentTransform.dispose();
+                    currentTransform = null;
+                }
+                // Attach TransformControls to selected mesh
+                currentTransform = new TransformControls(camera, renderer.domElement);
+                currentTransform.attach(mesh);
+                scene.add(currentTransform);
+                currentTransform.addEventListener('dragging-changed', function (e) {
+                    controls.enabled = !e.value;
+                    currentTransform.dragging = e.value;
+                });
+            }
         });
-    }
-});
         // Show/hide button
-        layerDiv.querySelector('.show-hide-btn').addEventListener('click', function() {
+        layerDiv.querySelector('.show-hide-btn').addEventListener('click', function () {
             layer.visible = !layer.visible;
             layer.mesh.visible = layer.visible;
             renderLayerList();
         });
         // Delete button
-        layerDiv.querySelector('.delete-btn').addEventListener('click', function() {
+        layerDiv.querySelector('.delete-btn').addEventListener('click', function () {
             deleteLayer(layer.id);
         });
         // Move up button
-        layerDiv.querySelector('.move-up-btn').addEventListener('click', function() {
+        layerDiv.querySelector('.move-up-btn').addEventListener('click', function () {
             if (idx > 0) {
                 moveLayer(idx, idx - 1);
             }
         });
         // Move down button
-        layerDiv.querySelector('.move-down-btn').addEventListener('click', function() {
+        layerDiv.querySelector('.move-down-btn').addEventListener('click', function () {
             if (idx < layers.length - 1) {
                 moveLayer(idx, idx + 1);
             }
         });
         list.appendChild(layerDiv);
     });
-// ลบเลเยอร์ออกจาก scene/layers
-function deleteLayer(id) {
-    const idx = layers.findIndex(l => l.id === id);
-    if (idx !== -1) {
-        const layer = layers[idx];
-        if (layer.mesh && layer.mesh.parent) {
-            layer.mesh.parent.remove(layer.mesh);
+    // ลบเลเยอร์ออกจาก scene/layers
+    function deleteLayer(id) {
+        const idx = layers.findIndex(l => l.id === id);
+        if (idx !== -1) {
+            const layer = layers[idx];
+            if (layer.mesh && layer.mesh.parent) {
+                layer.mesh.parent.remove(layer.mesh);
+            }
+            layers.splice(idx, 1);
+            renderLayerList();
         }
-        layers.splice(idx, 1);
-        renderLayerList();
     }
-}
 }
 
 
@@ -298,9 +298,9 @@ function cfg() {
         earAttachOverlap: parseFloat(document.querySelector('#earAttachOverlap').value) || 2.0,
         earYShift: parseFloat(document.querySelector('#earYShift').value) || 0.0,
 
-    // กว้าง/สูงรวมเป้าหมาย (mm)
-    totalWidth: parseFloat(document.querySelector('#totalWidth')?.value),
-    totalHeight: parseFloat(document.querySelector('#totalHeight')?.value),
+        // กว้าง/สูงรวมเป้าหมาย (mm)
+        totalWidth: parseFloat(document.querySelector('#totalWidth')?.value),
+        totalHeight: parseFloat(document.querySelector('#totalHeight')?.value),
         letterSpacing: parseFloat(document.querySelector('#letterSpacing')?.value) || 0.0,
 
         baseColor: document.querySelector('#baseColor')?.value || '#dddddd',
@@ -513,28 +513,28 @@ async function populateFontDropdown() {
     const listContainer = document.getElementById('fontDropdownList');
     const selectedDiv = document.getElementById('fontDropdownSelected');
     const usePersonalCheckbox = document.getElementById('usePersonalFonts');
-    
+
     // Move dropdown list to body to prevent stacking context issues
     if (listContainer && listContainer.parentElement.id === 'fontDropdownWrapper') {
         document.body.appendChild(listContainer);
     }
-    
+
     // สร้าง style element สำหรับ @font-face
     const styleEl = document.createElement('style');
     document.head.appendChild(styleEl);
-    
+
     let currentSelectedValue = '';
-    
+
     async function loadFonts() {
         // ลบรายการเดิม
         listContainer.innerHTML = '';
         styleEl.textContent = '';
-        
+
         // กำหนด path ตามการเลือก
         const isPersonal = usePersonalCheckbox.checked;
         const manifestPath = isPersonal ? 'font_personal/manifest.json' : 'font/manifest.json';
         const filterPath = isPersonal ? 'font_personal/' : 'font/font_free/';
-        
+
         // Prefer manifest file if available
         let fontPaths = FONT_LIST.slice();
         try {
@@ -557,7 +557,7 @@ async function populateFontDropdown() {
             seen.add(fontPath);
             const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
             const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
-            
+
             // สร้าง @font-face rule
             const fontFaceRule = `
                 @font-face {
@@ -567,7 +567,7 @@ async function populateFontDropdown() {
                 }
             `;
             styleEl.textContent += fontFaceRule;
-            
+
             // สร้าง custom option
             const item = document.createElement('div');
             item.className = 'custom-select-item';
@@ -575,33 +575,33 @@ async function populateFontDropdown() {
             item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             item.dataset.value = fontPath;
             item.dataset.fontName = fileName;
-            
+
             // Click event
             item.addEventListener('click', async () => {
                 // Remove previous selection
                 listContainer.querySelectorAll('.custom-select-item').forEach(el => {
                     el.classList.remove('selected');
                 });
-                
+
                 // Mark as selected
                 item.classList.add('selected');
-                
+
                 // Update selected display
                 selectedDiv.textContent = fileName;
                 selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
-                
+
                 // Hide dropdown
                 listContainer.style.display = 'none';
                 selectedDiv.classList.remove('active');
-                
+
                 // Load font
                 const success = await loadFontFromPath(fontPath);
-                
+
                 // Clear file upload
                 document.getElementById('font').value = '';
-                
+
                 currentSelectedValue = fontPath;
-                
+
                 // Auto refresh preview if font loaded successfully
                 if (success) {
                     MSG.textContent = '⏳ กำลังอัพเดต preview...';
@@ -609,27 +609,27 @@ async function populateFontDropdown() {
                     MSG.textContent = `✅ ใช้ฟอนต์: ${fileName} และอัพเดต preview แล้ว`;
                 }
             });
-            
+
             listContainer.appendChild(item);
         }
     }
-    
+
     // โหลดฟ้อนต์ครั้งแรก
     await loadFonts();
-    
+
     // Event listener สำหรับ checkbox
     usePersonalCheckbox.addEventListener('change', async () => {
         await loadFonts();
         selectedDiv.textContent = '-- เลือกฟอนต์ --';
         selectedDiv.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
     });
-    
+
     // Toggle dropdown with position calculation
     const wrapperDiv = document.getElementById('fontDropdownWrapper');
     selectedDiv.addEventListener('click', (e) => {
         e.stopPropagation();
         const isVisible = listContainer.style.display === 'block';
-        
+
         if (!isVisible) {
             // Calculate position
             const rect = selectedDiv.getBoundingClientRect();
@@ -645,7 +645,7 @@ async function populateFontDropdown() {
             wrapperDiv.classList.remove('active');
         }
     });
-    
+
     // Update position on scroll
     const updateDropdownPosition = () => {
         if (listContainer.style.display === 'block') {
@@ -654,10 +654,10 @@ async function populateFontDropdown() {
             listContainer.style.left = `${rect.left}px`;
         }
     };
-    
+
     window.addEventListener('scroll', updateDropdownPosition, true);
     window.addEventListener('resize', updateDropdownPosition);
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('#fontDropdownWrapper')) {
@@ -666,7 +666,7 @@ async function populateFontDropdown() {
             wrapperDiv.classList.remove('active');
         }
     });
-    
+
     console.log(`✅ สร้าง custom dropdown พร้อมตัวอย่างฟอนต์ ${FONT_LIST.length} ฟอนต์`);
 }
 
@@ -804,14 +804,27 @@ async function buildGeometries() {
             // Always use mm for ear/hole features, not affected by scaling
             const rHoleMM = c.holeDiameter * 0.5;
             const rOuterMM = rHoleMM + c.earRingThickness;
-            const yCenterMM = ((minY + maxY) / 2) * c.mmPerUnit + c.earYShift;
             const attachMM = c.earAttachOverlap;
-            const cxMM = (c.earSide === 'right')
-                ? ((maxX * c.mmPerUnit) + rOuterMM - attachMM)
-                : ((minX * c.mmPerUnit) - rOuterMM + attachMM);
+
+            // Calculate center position based on side
+            let cxMM, yCenterMM;
+
+            if (c.earSide === 'top') {
+                // Top placement: Center X horizontally, Y at top edge
+                cxMM = ((minX + maxX) / 2) * c.mmPerUnit;
+                // Note: In SVG coords (Y-down), minY is the "top" visual edge.
+                // To place above, we subtract radius (move to smaller Y).
+                yCenterMM = (minY * c.mmPerUnit) - rOuterMM + attachMM;
+            } else {
+                // Side placement (Left/Right)
+                yCenterMM = ((minY + maxY) / 2) * c.mmPerUnit + c.earYShift;
+                cxMM = (c.earSide === 'right')
+                    ? ((maxX * c.mmPerUnit) + rOuterMM - attachMM)
+                    : ((minX * c.mmPerUnit) - rOuterMM + attachMM);
+            }
 
             if ((c.earPlacement || 'side') === 'side') {
-                // ---------- แบบเดิม: หูด้านข้าง ----------
+                // ---------- แบบเดิม: หูด้านข้าง/ด้านบน (นอกกรอบ) ----------
                 // Scale all coordinates from mm to FU before creating shape
                 const scale = 1 / c.mmPerUnit;
                 const earShape = new THREE.Shape();
@@ -824,9 +837,21 @@ async function buildGeometries() {
                 // ---------- ใหม่: เจาะรู "ในกรอบ" ----------
                 const scale = 1 / c.mmPerUnit;
                 const wallMM = c.earRingThickness;
-                const cxMM2 = (c.earSide === 'right')
-                    ? ((maxX * c.mmPerUnit) - wallMM - rHoleMM)
-                    : ((minX * c.mmPerUnit) + wallMM + rHoleMM);
+
+                // Recalculate center for "inside" mode
+                let cxMM2, yCenterMM2;
+
+                if (c.earSide === 'top') {
+                    cxMM2 = cxMM; // X stays centered
+                    // Move down (add Y) to be inside
+                    yCenterMM2 = (minY * c.mmPerUnit) + wallMM + rHoleMM;
+                } else {
+                    yCenterMM2 = yCenterMM; // Y stays centered
+                    cxMM2 = (c.earSide === 'right')
+                        ? ((maxX * c.mmPerUnit) - wallMM - rHoleMM)
+                        : ((minX * c.mmPerUnit) + wallMM + rHoleMM);
+                }
+
                 // เจาะรูลงใน shape หลัก: เลือก shape ที่มีพื้นที่มากสุด (มักเป็นชิ้นนอก)
                 let targetShape = baseShapes[0];
                 if (baseShapes.length > 1) {
@@ -835,7 +860,7 @@ async function buildGeometries() {
                     );
                 }
                 const inner = new THREE.Path();
-                inner.absarc(cxMM2 * scale, yCenterMM * scale, rHoleMM * scale, 0, Math.PI * 2, false);
+                inner.absarc(cxMM2 * scale, yCenterMM2 * scale, rHoleMM * scale, 0, Math.PI * 2, false);
                 targetShape.holes.push(inner);
             }
         }
@@ -888,8 +913,14 @@ async function buildGeometries() {
         if (c.earEnabled && (c.earPlacement || 'side') === 'inside') {
             const keepAwayMM = 5.0;                                 // << ระยะที่อยากเว้น
             const keepAwayFU = keepAwayMM / c.mmPerUnit;
-            // ถ้ารูอยู่ขวา -> ขยับตัวอักษรไปทางซ้าย (ค่าลบ), ถ้ารูอยู่ซ้าย -> ขยับไปขวา
-            textOffsetXFU = (c.earSide === 'right') ? -keepAwayFU : keepAwayFU;
+
+            if (c.earSide === 'top') {
+                // Top inside: Move text down (increase Y)
+                textOffsetYFU = keepAwayFU;
+            } else {
+                // ถ้ารูอยู่ขวา -> ขยับตัวอักษรไปทางซ้าย (ค่าลบ), ถ้ารูอยู่ซ้าย -> ขยับไปขวา
+                textOffsetXFU = (c.earSide === 'right') ? -keepAwayFU : keepAwayFU;
+            }
         }
 
         for (const s of letterShapesFU) {
@@ -911,10 +942,19 @@ async function buildGeometries() {
 
             // ใช้ earAttachOverlap เป็นระยะห่างจากขอบกรอบ (ซ้อนเข้าฐาน)
             const insetFU = (c.earAttachOverlap / c.mmPerUnit) || 0;
-            const yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
-            const cxFU = (c.earSide === 'right')
-                ? (maxX - insetFU - rHoleFU)
-                : (minX + insetFU + rHoleFU);
+
+            let cxFU, yCenterFU;
+
+            if (c.earSide === 'top') {
+                cxFU = (minX + maxX) / 2;
+                // Top inside: minY + inset + radius
+                yCenterFU = minY + insetFU + rHoleFU;
+            } else {
+                yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
+                cxFU = (c.earSide === 'right')
+                    ? (maxX - insetFU - rHoleFU)
+                    : (minX + insetFU + rHoleFU);
+            }
 
             // รูจริงเพียง "วงเดียว" และทำเป็น clockwise เพื่อเป็น hole ชัดเจน
             const inner = new THREE.Path();
@@ -931,9 +971,18 @@ async function buildGeometries() {
             const rOuter = rHole + c.earRingThickness;
             const rOuterFU = rOuter / c.mmPerUnit;
             const rHoleFU = rHole / c.mmPerUnit;
-            const yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
             const attachFU = c.earAttachOverlap / c.mmPerUnit;
-            const cxFU = (c.earSide === 'right') ? (maxX + rOuterFU - attachFU) : (minX - rOuterFU + attachFU);
+
+            let cxFU, yCenterFU;
+
+            if (c.earSide === 'top') {
+                cxFU = (minX + maxX) / 2;
+                // Top outside: minY - rOuter + attach
+                yCenterFU = minY - rOuterFU + attachFU;
+            } else {
+                yCenterFU = (minY + maxY) / 2 + (c.earYShift / c.mmPerUnit);
+                cxFU = (c.earSide === 'right') ? (maxX + rOuterFU - attachFU) : (minX - rOuterFU + attachFU);
+            }
 
             const earShape = new THREE.Shape();
             earShape.absarc(cxFU, yCenterFU, rOuterFU, 0, Math.PI * 2, false);
@@ -1117,16 +1166,16 @@ async function refresh() {
             return;
         }
 
-    const sizeVec = box.getSize(new THREE.Vector3());
-    const size = sizeVec.length();
-    // ขนาดจริง (หน่วย mm) — geometries ถูกสเกลเป็น mm ตอนสร้าง
-    const widthMM = Math.max(0, box.max.x - box.min.x);
-    const heightMM = Math.max(0, box.max.y - box.min.y);
-    const depthMM = Math.max(0, box.max.z - box.min.z);
-    // ปัดทศนิยม 2 ตำแหน่ง
-    const fmt = (v) => Math.round(v * 100) / 100;
-    const dimEl = document.getElementById('dim-text');
-    if (dimEl) dimEl.textContent = `${fmt(widthMM)} * ${fmt(heightMM)} * ${fmt(depthMM)} mm`;
+        const sizeVec = box.getSize(new THREE.Vector3());
+        const size = sizeVec.length();
+        // ขนาดจริง (หน่วย mm) — geometries ถูกสเกลเป็น mm ตอนสร้าง
+        const widthMM = Math.max(0, box.max.x - box.min.x);
+        const heightMM = Math.max(0, box.max.y - box.min.y);
+        const depthMM = Math.max(0, box.max.z - box.min.z);
+        // ปัดทศนิยม 2 ตำแหน่ง
+        const fmt = (v) => Math.round(v * 100) / 100;
+        const dimEl = document.getElementById('dim-text');
+        if (dimEl) dimEl.textContent = `${fmt(widthMM)} * ${fmt(heightMM)} * ${fmt(depthMM)} mm`;
         const centroid = box.getCenter(new THREE.Vector3());
 
         controls.target.copy(centroid);
@@ -1170,7 +1219,7 @@ function setCameraView(view) {
     const sizeVec = box.getSize(new THREE.Vector3());
     const size = sizeVec.length();
     let pos = { x: centroid.x, y: centroid.y, z: centroid.z };
-    switch(view) {
+    switch (view) {
         case 'top':
             pos.z += size;
             break;
@@ -1235,7 +1284,7 @@ document.querySelector('#add').addEventListener('click', async () => {
         const hasVerts = (g) => g && g.attributes && g.attributes.position && g.attributes.position.count > 0;
 
         // สร้าง base mesh (ต้องมีเสมอ)
-        const meshProps = { position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: new THREE.Vector3(1,1,1) };
+        const meshProps = { position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: new THREE.Vector3(1, 1, 1) };
         baseMesh = new THREE.Mesh(
             baseGeom,
             new THREE.MeshStandardMaterial({
@@ -1333,18 +1382,18 @@ document.querySelector('#export3MF').addEventListener('click', async () => {
 
         // สร้าง scene ชั่วคราวสำหรับ export
         const exportScene = new THREE.Scene();
-        
+
         // เพิ่มทุก layer ที่มี mesh เข้า scene
         layers.forEach(layer => {
             if (layer.mesh && layer.mesh.geometry) {
                 const geom = layer.mesh.geometry.clone();
                 geom.applyMatrix4(layer.mesh.matrixWorld);
-                
+
                 // สร้าง material ใหม่ที่มีสีจาก layer
                 const mat = new THREE.MeshStandardMaterial({
                     color: layer.mesh.material.color.clone()
                 });
-                
+
                 const mesh = new THREE.Mesh(geom, mat);
                 mesh.name = layer.name || 'Layer';
                 exportScene.add(mesh);
@@ -1359,7 +1408,7 @@ document.querySelector('#export3MF').addEventListener('click', async () => {
         // ใช้ ThreeMFExporter แบบใหม่ที่รองรับสี
         const exporter = new ThreeMFExporter();
         const blob = await exporter.parse(exportScene);
-        
+
         if (!blob) {
             MSG.textContent = '❌ สร้างไฟล์ 3MF ไม่สำเร็จ';
             return;
@@ -1373,7 +1422,7 @@ document.querySelector('#export3MF').addEventListener('click', async () => {
         a.download = `${fileName}_multicolor.3mf`;
         a.click();
         URL.revokeObjectURL(a.href);
-        
+
         MSG.textContent = `✅ ส่งออก 3MF พร้อมสี ${layers.length} เลเยอร์สำเร็จ!`;
     } catch (e) {
         console.error(e);
@@ -1398,7 +1447,7 @@ document.getElementById('font').addEventListener('change', (e) => {
         const selectedDiv = document.getElementById('fontDropdownSelected');
         selectedDiv.textContent = '-- เลือกฟอนต์ --';
         selectedDiv.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
-        
+
         // Remove selected class from all items
         document.querySelectorAll('.custom-select-item').forEach(item => {
             item.classList.remove('selected');
@@ -1430,7 +1479,7 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         });
         const pngWidthPx = img.width;
         // Convert PNG to SVG using image-tracer-js
-        const svgString = await pngToSVG(file, { ltres:1, qtres:1, pathomit:8, blurradius:0, numberofcolors:2 });
+        const svgString = await pngToSVG(file, { ltres: 1, qtres: 1, pathomit: 8, blurradius: 0, numberofcolors: 2 });
         // Parse SVG and extrude using SVGLoader
         const loader = new SVGLoader();
         const svgData = loader.parse(svgString);
@@ -1455,7 +1504,7 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
         });
         geometry.computeVertexNormals();
         geometry.translate(0, 0, 0);
-        const material = new THREE.MeshStandardMaterial({ 
+        const material = new THREE.MeshStandardMaterial({
             color: 0x222222,
             metalness: 0.1,
             roughness: 0.5,
@@ -1463,9 +1512,9 @@ document.querySelector('#addPngExtrude').addEventListener('click', async () => {
             emissiveIntensity: 0.15
         });
         const mesh = new THREE.Mesh(geometry, material);
-    // คำนวณ scale factor จาก targetWidthMM / pngWidthPx แล้วหารด้วย 10 เพื่อให้ขนาด mm ตรงจริง
-    const scaleFactor = (targetWidthMM / pngWidthPx) ;
-    mesh.scale.set(scaleFactor, scaleFactor, 1);
+        // คำนวณ scale factor จาก targetWidthMM / pngWidthPx แล้วหารด้วย 10 เพื่อให้ขนาด mm ตรงจริง
+        const scaleFactor = (targetWidthMM / pngWidthPx);
+        mesh.scale.set(scaleFactor, scaleFactor, 1);
         scene.add(mesh);
         refreshScene();
         addLayer(mesh, 'PNG→SVG Extrude');
