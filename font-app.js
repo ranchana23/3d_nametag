@@ -152,17 +152,17 @@ function updateTable() {
     for (const font of currentFonts) {
         const row = document.createElement('tr');
 
-        // คอลัมน์ลำดับ
-        const cellNumber = document.createElement('td');
-        cellNumber.className = 'font-number';
-        cellNumber.textContent = font.number;
-        row.appendChild(cellNumber);
-
         // คอลัมน์ชื่อฟอนต์
         const cellName = document.createElement('td');
         cellName.className = 'font-name';
         cellName.textContent = font.name;
         row.appendChild(cellName);
+
+        // คอลัมน์ลำดับ
+        const cellNumber = document.createElement('td');
+        cellNumber.className = 'font-number';
+        cellNumber.textContent = font.number;
+        row.appendChild(cellNumber);
 
         // คอลัมน์ตัวอย่างภาษาไทย
         const cellThai = document.createElement('td');
