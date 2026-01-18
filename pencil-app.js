@@ -65,7 +65,6 @@ const FONT_LIST = [
     'font/iann_b.ttf',
     'font/Better.ttf',
     'font/Butterfly.ttf',
-    'font/font_free/Mali-Bold.ttf',
     'font/font_free/Mali-Medium.ttf',
     'font/FREE/BarberChop.otf',
     'font/FREE/Simanja.ttf'

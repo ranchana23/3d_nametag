@@ -27,13 +27,10 @@ const FONT_LIST = [
     'font/font_free/2005_iannnnnGMO.ttf',
     'font/font_free/2005_iannnnnMTV.ttf',
     'font/font_free/iannnnn-HEN-Bold.ttf',
-    'font/font_free/iannnnn-HEN-Regular.ttf',
     'font/font_free/iannnnn-HEN-Thin.ttf',
     'font/font_free/iannnnn-TIGER-Black.ttf',
-    'font/font_free/iannnnn-TIGER-Bold.ttf',
     'font/font_free/iannnnn-TIGER-Regular.ttf',
     'font/font_free/iannnnn-TIGER-Thin.ttf',
-    'font/font_free/Mali-Bold.ttf',
     'font/font_free/Mali-Medium.ttf',
     'font/font_free/SanamDeklen_chaya.ttf',
     'font/font_free/WDB_Bangna.ttf',
@@ -122,6 +119,9 @@ async function loadFonts() {
         fontIndex++;
     }
 
+    // รอให้ฟอนต์โหลดเสร็จก่อนอัพเดทตาราง
+    await waitForFontsToLoad();
+    
     // อัพเดทตาราง
     updateTable();
 
@@ -129,6 +129,25 @@ async function loadFonts() {
     fontCount.textContent = currentFonts.length;
     fontType.textContent = isPersonal ? 'Personal' : 'Free';
     fontStats.innerHTML = `<i class="fa fa-check-circle"></i> โหลดฟอนต์เรียบร้อย ${currentFonts.length} แบบ`;
+}
+
+// ฟังก์ชันรอให้ฟอนต์โหลดเสร็จ
+async function waitForFontsToLoad() {
+    // ใช้ document.fonts API ถ้ามี
+    if (document.fonts && document.fonts.ready) {
+        try {
+            await document.fonts.ready;
+            // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าฟอนต์โหลดเสร็จ
+            await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (e) {
+            console.warn('Font loading check failed:', e);
+            // fallback: รอสักพัก
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    } else {
+        // fallback สำหรับ browser เก่า
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
 }
 
 // ฟังก์ชันตรวจสอบว่าฟอนต์รองรับภาษาไทยหรือไม่
