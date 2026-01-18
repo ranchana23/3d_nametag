@@ -131,6 +131,40 @@ async function loadFonts() {
     fontStats.innerHTML = `<i class="fa fa-check-circle"></i> โหลดฟอนต์เรียบร้อย ${currentFonts.length} แบบ`;
 }
 
+// ฟังก์ชันตรวจสอบว่าฟอนต์รองรับภาษาไทยหรือไม่
+function checkThaiSupport(fontFamily, testText) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    // ตั้งค่า canvas
+    canvas.width = 200;
+    canvas.height = 50;
+    
+    // วาดด้วยฟอนต์ที่ต้องการทดสอบ
+    context.font = `24px '${fontFamily}'`;
+    context.fillText(testText, 0, 30);
+    const testData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    
+    // ล้าง canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // วาดด้วยฟอนต์ fallback (sans-serif)
+    context.font = '24px sans-serif';
+    context.fillText(testText, 0, 30);
+    const fallbackData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    
+    // เปรียบเทียบ pixel data
+    let differences = 0;
+    for (let i = 0; i < testData.length; i++) {
+        if (testData[i] !== fallbackData[i]) {
+            differences++;
+        }
+    }
+    
+    // ถ้ามีความแตกต่างมากกว่า 100 pixels แสดงว่ารองรับภาษาไทย
+    return differences > 100;
+}
+
 function updateTable() {
     const fontTableBody = document.getElementById('fontTableBody');
     const sampleTextThai = document.getElementById('sampleTextThai').value;
@@ -167,8 +201,18 @@ function updateTable() {
         // คอลัมน์ตัวอย่างภาษาไทย
         const cellThai = document.createElement('td');
         cellThai.className = 'preview-text';
-        cellThai.style.fontFamily = `'${font.fontFamily}', 'Noto Sans Thai Looped', sans-serif`;
-        cellThai.textContent = sampleTextThai;
+        
+        // ตรวจสอบว่าฟอนต์รองรับภาษาไทยหรือไม่
+        const supportsThai = checkThaiSupport(font.fontFamily, sampleTextThai);
+        
+        if (supportsThai) {
+            cellThai.style.fontFamily = `'${font.fontFamily}', 'Noto Sans Thai Looped', sans-serif`;
+            cellThai.textContent = sampleTextThai;
+        } else {
+            cellThai.textContent = '-';
+            cellThai.style.color = 'var(--text-secondary)';
+            cellThai.style.textAlign = 'center';
+        }
         row.appendChild(cellThai);
 
         // คอลัมน์ตัวอย่างภาษาอังกฤษ
