@@ -551,11 +551,18 @@ async function populateFontDropdown() {
 
         // dedupe and normalize
         const seen = new Set();
+        let fontIndex = 1;
         for (const fontPath of fontPaths) {
             if (!fontPath || seen.has(fontPath)) continue;
             seen.add(fontPath);
             const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
             const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            
+            // กำหนดหมายเลขกำกับ
+            const prefix = isPersonal ? 'P' : 'F';
+            const fontNumber = String(fontIndex).padStart(2, '0');
+            const displayName = `${prefix}${fontNumber} ${fileName}`;
+            fontIndex++;
 
             // สร้าง @font-face rule
             const fontFaceRule = `
@@ -570,7 +577,7 @@ async function populateFontDropdown() {
             // สร้าง custom option
             const item = document.createElement('div');
             item.className = 'custom-select-item';
-            item.textContent = fileName;
+            item.textContent = displayName;
             item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             item.dataset.value = fontPath;
             item.dataset.fontName = fileName;
@@ -586,7 +593,7 @@ async function populateFontDropdown() {
                 item.classList.add('selected');
 
                 // Update selected display
-                selectedDiv.textContent = fileName;
+                selectedDiv.textContent = displayName;
                 selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
 
                 // Hide dropdown

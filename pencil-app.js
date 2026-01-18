@@ -572,7 +572,7 @@ async function populateFontDropdown() {
                 });
                 
                 item.classList.add('selected');
-                selectedDiv.textContent = fileName;
+                selectedDiv.textContent = displayName;
                 selectedDiv.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
                 
                 listContainer.style.display = 'none';
