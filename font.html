@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Font Preview Gallery</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <!-- ใช้ฟอนต์ Noto Sans Thai Looped และ CSS ใหม่ -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@100;200;300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="./style-noto.css">
+    <!-- FontAwesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        main {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .font-table-container {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .font-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .font-table thead {
+            background: var(--secondary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .font-table th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--line);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .font-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            color: var(--text-primary);
+        }
+
+        .font-table tbody tr:hover {
+            background: var(--secondary);
+        }
+
+        .font-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .font-number {
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+        }
+
+        .font-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preview-text {
+            font-size: 20px;
+            line-height: 1.6;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .stats {
+            background: var(--secondary);
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stats-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .stats-value {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation Sidebar -->
+    <nav class="page-nav">
+        <a href="index.html" class="nav-link">
+            <i class="fa fa-id-card"></i>
+            <span>Nametag</span>
+        </a>
+        <a href="tag.html" class="nav-link">
+            <i class="fa fa-square"></i>
+            <span>Rectangle</span>
+        </a>
+        <a href="png.html" class="nav-link">
+            <i class="fa fa-image"></i>
+            <span>PNG Extrude</span>
+        </a>
+        <a href="pencil.html" class="nav-link">
+            <i class="fa fa-pencil"></i>
+            <span>Pencil Topper</span>
+        </a>
+        <a href="font.html" class="nav-link active">
+            <i class="fa fa-font"></i>
+            <span>Font Preview</span>
+        </a>
+    </nav>
+
+    <aside>
+        <h1><i class="fa fa-font"></i> Font Preview Gallery</h1>
+
+        <fieldset>
+            <legend>ตัวเลือก</legend>
+            <label>
+                <input type="checkbox" id="usePersonalFonts" />
+                แสดงฟอนต์ Personal
+            </label>
+            <div class="muted">เลือกเพื่อดูฟอนต์ส่วนตัวแทนฟอนต์ฟรี</div>
+        </fieldset>
+
+        <fieldset>
+            <legend>ปรับแต่งตัวอย่าง</legend>
+            <label>ข้อความตัวอย่างภาษาไทย</label>
+            <input type="text" id="sampleTextThai" value="กขฃคฅฆงจฉชซฌญฎฏ" />
+
+            <label>ข้อความตัวอย่างภาษาอังกฤษ</label>
+            <input type="text" id="sampleTextEnglish" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ" />
+
+            <button id="refreshPreview" class="btn secondary">
+                <i class="fa fa-refresh"></i> อัพเดทตัวอย่าง
+            </button>
+        </fieldset>
+
+        <div id="fontStats" class="muted" style="margin-top: 20px;">
+            <i class="fa fa-info-circle"></i> กำลังโหลด...
+        </div>
+    </aside>
+
+    <main>
+        <div class="stats">
+            <div class="stats-item">
+                <i class="fa fa-database" style="color: var(--accent); font-size: 20px;"></i>
+                <div>
+                    <div class="stats-label">จำนวนฟอนต์</div>
+                    <div class="stats-value" id="fontCount">0</div>
+                </div>
+            </div>
+            <div class="stats-item">
+                <i class="fa fa-folder-open" style="color: var(--accent); font-size: 20px;"></i>
+                <div>
+                    <div class="stats-label">ประเภท</div>
+                    <div class="stats-value" id="fontType">Free</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="font-table-container">
+            <table class="font-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">ชื่อฟอนต์</th>
+                        <th style="width: 80px;">ลำดับ</th>
+                        <th style="width: 37.5%;">ตัวอย่างไทย</th>
+                        <th style="width: 37.5%;">Example (Eng)</th>
+                    </tr>
+                </thead>
+                <tbody id="fontTableBody">
+                    <tr>
+                        <td colspan="4" class="loading-message">
+                            <i class="fa fa-spinner fa-spin"></i> กำลังโหลดฟอนต์...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module" src="./font-app.js"></script>
+</body>
+
+</html>
