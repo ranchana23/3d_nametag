@@ -476,7 +476,6 @@ const FONT_LIST = [
     'font/FC Palette Color.ttf',
     'font/FC Palette Italic.ttf',
     'font/FC Palette.ttf',
-    'font/GMCPopcornStrawberry Demo.ttf',
     'font/Good Love.ttf',
     'font/iann_b.ttf',
     'font/iann.ttf',
