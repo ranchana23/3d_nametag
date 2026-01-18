@@ -1,46 +1,4 @@
 // Font Preview Gallery App
-const FONT_LIST = [
-    // Main folder
-    'font/365PANIRotFaiDemo-Regular.ttf',
-    'font/Better.ttf',
-    'font/Butterfly.ttf',
-    'font/CkPastaDemo.ttf',
-    'font/Comfortaa-VariableFont_wght.ttf',
-    'font/DSgalileoTester.ttf',
-    'font/Elowen.ttf',
-    'font/FC Palette Color Italic.ttf',
-    'font/FC Palette Color.ttf',
-    'font/FC Palette Italic.ttf',
-    'font/FC Palette.ttf',
-    'font/Good Love.ttf',
-    'font/iann_b.ttf',
-    'font/iann.ttf',
-    'font/ing.ttf',
-    'font/January Payment.ttf',
-    'font/maaja ver 1.00.ttf',
-    'font/SanamDeklen_chaya.ttf',
-    'font/Spookvine.ttf',
-    'font/Stencilia-A.ttf',
-    'font/SweetHipster-PzlE.ttf',
-    'font/Various.ttf',
-    // font_free subfolder
-    'font/font_free/2005_iannnnnGMO.ttf',
-    'font/font_free/2005_iannnnnMTV.ttf',
-    'font/font_free/iannnnn-HEN-Bold.ttf',
-    'font/font_free/iannnnn-HEN-Thin.ttf',
-    'font/font_free/iannnnn-TIGER-Black.ttf',
-    'font/font_free/iannnnn-TIGER-Regular.ttf',
-    'font/font_free/iannnnn-TIGER-Thin.ttf',
-    'font/font_free/Mali-Medium.ttf',
-    'font/font_free/SanamDeklen_chaya.ttf',
-    'font/font_free/WDB_Bangna.ttf',
-    // FREE subfolder
-    'font/FREE/BarberChop.otf',
-    'font/FREE/Beaver Punch.otf',
-    'font/FREE/Gokhan.ttf',
-    'font/FREE/Simanja.ttf'
-];
-
 let currentFonts = [];
 
 async function loadFonts() {
@@ -65,15 +23,25 @@ async function loadFonts() {
     const filterPath = isPersonal ? 'font_personal/' : 'font/font_free/';
 
     // โหลด font list จาก manifest
-    let fontPaths = FONT_LIST.slice();
+    let fontPaths = [];
     try {
         const resp = await fetch(manifestPath);
         if (resp.ok) {
             const manifest = await resp.json();
-            if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
+            if (Array.isArray(manifest) && manifest.length) {
+                fontPaths = manifest;
+            }
+        } else {
+            console.error(`ไม่พบไฟล์ ${manifestPath}`);
+            fontTableBody.innerHTML = '<tr><td colspan="4" class="loading-message"><i class="fa fa-exclamation-circle"></i> ไม่พบ manifest.json</td></tr>';
+            fontStats.innerHTML = '<i class="fa fa-exclamation-circle"></i> ไม่พบไฟล์ manifest.json';
+            return;
         }
     } catch (e) {
-        console.warn('No font manifest, falling back to built-in FONT_LIST');
+        console.error('เกิดข้อผิดพลาด:', e);
+        fontTableBody.innerHTML = '<tr><td colspan="4" class="loading-message"><i class="fa fa-exclamation-circle"></i> เกิดข้อผิดพลาด</td></tr>';
+        fontStats.innerHTML = '<i class="fa fa-exclamation-circle"></i> เกิดข้อผิดพลาด';
+        return;
     }
 
     // Filter เฉพาะฟ้อนต์ตาม path ที่เลือก
@@ -92,7 +60,12 @@ async function loadFonts() {
         seen.add(fontPath);
 
         const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
-        const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        // แก้ไขชื่อฟอนต์ให้ปลอดภัยสำหรับ CSS - ถ้าขึ้นต้นด้วยตัวเลข ให้เพิ่ม 'font_'
+        let safeName = fileName.replace(/[^a-zA-Z0-9]/g, '_');
+        if (/^\d/.test(safeName)) {
+            safeName = 'font_' + safeName;
+        }
+        const fontFamilyName = `FontPreview_${safeName}`;
 
         // กำหนดหมายเลขกำกับ
         const prefix = isPersonal ? 'P' : 'F';

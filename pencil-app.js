@@ -61,15 +61,6 @@ let baseMesh = null;
 let lettersMesh = null;
 
 // ============= Font Management =============
-const FONT_LIST = [
-    'font/iann_b.ttf',
-    'font/Better.ttf',
-    'font/Butterfly.ttf',
-    'font/font_free/Mali-Medium.ttf',
-    'font/FREE/BarberChop.otf',
-    'font/FREE/Simanja.ttf'
-];
-
 let currentFontPath = null;
 
 // Convert opentype.js path to Three.js Shape
@@ -528,26 +519,46 @@ async function populateFontDropdown() {
         const manifestPath = isPersonal ? 'font_personal/manifest.json' : 'font/manifest.json';
         const filterPath = isPersonal ? 'font_personal/' : 'font/font_free/';
         
-        let fontPaths = FONT_LIST.slice();
+        let fontPaths = [];
         try {
             const resp = await fetch(manifestPath);
             if (resp.ok) {
                 const manifest = await resp.json();
-                if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
+                if (Array.isArray(manifest) && manifest.length) {
+                    fontPaths = manifest;
+                }
+            } else {
+                console.error(`ไม่พบไฟล์ ${manifestPath}`);
+                listContainer.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">ไม่พบ manifest.json</div>';
+                return;
             }
         } catch (e) {
-            console.warn('No font manifest, falling back to built-in FONT_LIST');
+            console.error('เกิดข้อผิดพลาด:', e);
+            listContainer.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">เกิดข้อผิดพลาด</div>';
+            return;
         }
         
         // Filter เฉพาะฟ้อนต์ตาม path ที่เลือก
         fontPaths = fontPaths.filter(path => path.includes(filterPath));
         
         const seen = new Set();
+        let fontIndex = 1;
         for (const fontPath of fontPaths) {
             if (!fontPath || seen.has(fontPath)) continue;
             seen.add(fontPath);
             const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
-            const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            // แก้ไขชื่อฟอนต์ให้ปลอดภัยสำหรับ CSS - ถ้าขึ้นต้นด้วยตัวเลข ให้เพิ่ม 'font_'
+            let safeName = fileName.replace(/[^a-zA-Z0-9]/g, '_');
+            if (/^\d/.test(safeName)) {
+                safeName = 'font_' + safeName;
+            }
+            const fontFamilyName = `FontPreview_${safeName}`;
+            
+            // กำหนดหมายเลขกำกับ
+            const prefix = isPersonal ? 'P' : 'F';
+            const fontNumber = String(fontIndex).padStart(2, '0');
+            const displayName = `${prefix}${fontNumber} ${fileName}`;
+            fontIndex++;
             
             const fontFaceRule = `
                 @font-face {
@@ -560,7 +571,7 @@ async function populateFontDropdown() {
             
             const item = document.createElement('div');
             item.className = 'custom-select-item';
-            item.textContent = fileName;
+            item.textContent = displayName;
             item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             item.dataset.value = fontPath;
             item.dataset.fontName = fileName;

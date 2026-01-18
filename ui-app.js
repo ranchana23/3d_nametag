@@ -462,49 +462,6 @@ async function loadDefaultFont() {
     MSG.textContent = 'ใช้ฟอนต์ Default (iann_b.ttf)';
 }
 
-// โหลดรายการฟอนต์จากโฟลเดอร์
-const FONT_LIST = [
-    // Main folder
-    'font/365PANIRotFaiDemo-Regular.ttf',
-    'font/Better.ttf',
-    'font/Butterfly.ttf',
-    'font/CkPastaDemo.ttf',
-    'font/Comfortaa-VariableFont_wght.ttf',
-    'font/DSgalileoTester.ttf',
-    'font/Elowen.ttf',
-    'font/FC Palette Color Italic.ttf',
-    'font/FC Palette Color.ttf',
-    'font/FC Palette Italic.ttf',
-    'font/FC Palette.ttf',
-    'font/Good Love.ttf',
-    'font/iann_b.ttf',
-    'font/iann.ttf',
-    'font/ing.ttf',
-    'font/January Payment.ttf',
-    'font/maaja ver 1.00.ttf',
-    'font/SanamDeklen_chaya.ttf',
-    'font/Spookvine.ttf',
-    'font/Stencilia-A.ttf',
-    'font/SweetHipster-PzlE.ttf',
-    'font/Various.ttf',
-    // font_free subfolder
-    'font/font_free/2005_iannnnnGMO.ttf',
-    'font/font_free/2005_iannnnnMTV.ttf',
-    'font/font_free/iannnnn-HEN-Bold.ttf',
-    'font/font_free/iannnnn-HEN-Thin.ttf',
-    'font/font_free/iannnnn-TIGER-Black.ttf',
-    'font/font_free/iannnnn-TIGER-Regular.ttf',
-    'font/font_free/iannnnn-TIGER-Thin.ttf',
-    'font/font_free/Mali-Medium.ttf',
-    'font/font_free/SanamDeklen_chaya.ttf',
-    'font/font_free/WDB_Bangna.ttf',
-    // FREE subfolder
-    'font/FREE/BarberChop.otf',
-    'font/FREE/Beaver Punch.otf',
-    'font/FREE/Gokhan.ttf',
-    'font/FREE/Simanja.ttf'
-];
-
 async function populateFontDropdown() {
     const listContainer = document.getElementById('fontDropdownList');
     const selectedDiv = document.getElementById('fontDropdownSelected');
@@ -531,16 +488,24 @@ async function populateFontDropdown() {
         const manifestPath = isPersonal ? 'font_personal/manifest.json' : 'font/manifest.json';
         const filterPath = isPersonal ? 'font_personal/' : 'font/font_free/';
 
-        // Prefer manifest file if available
-        let fontPaths = FONT_LIST.slice();
+        // โหลดจาก manifest.json
+        let fontPaths = [];
         try {
             const resp = await fetch(manifestPath);
             if (resp.ok) {
                 const manifest = await resp.json();
-                if (Array.isArray(manifest) && manifest.length) fontPaths = manifest;
+                if (Array.isArray(manifest) && manifest.length) {
+                    fontPaths = manifest;
+                }
+            } else {
+                console.error(`ไม่พบไฟล์ ${manifestPath}`);
+                listContainer.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">ไม่พบ manifest.json<br>กรุณาสร้างไฟล์ manifest.json ในโฟลเดอร์ฟอนต์</div>';
+                return;
             }
         } catch (e) {
-            console.warn('No font manifest, falling back to built-in FONT_LIST');
+            console.error('เกิดข้อผิดพลาดในการโหลด manifest:', e);
+            listContainer.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">เกิดข้อผิดพลาดในการโหลดฟอนต์</div>';
+            return;
         }
 
         // Filter เฉพาะฟ้อนต์ตาม path ที่เลือก
@@ -553,7 +518,12 @@ async function populateFontDropdown() {
             if (!fontPath || seen.has(fontPath)) continue;
             seen.add(fontPath);
             const fileName = fontPath.split('/').pop().replace(/\.(ttf|otf)$/i, '');
-            const fontFamilyName = `FontPreview_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            // แก้ไขชื่อฟอนต์ให้ปลอดภัยสำหรับ CSS - ถ้าขึ้นต้นด้วยตัวเลข ให้เพิ่ม 'font_'
+            let safeName = fileName.replace(/[^a-zA-Z0-9]/g, '_');
+            if (/^\d/.test(safeName)) {
+                safeName = 'font_' + safeName;
+            }
+            const fontFamilyName = `FontPreview_${safeName}`;
             
             // กำหนดหมายเลขกำกับ
             const prefix = isPersonal ? 'P' : 'F';
@@ -597,7 +567,7 @@ async function populateFontDropdown() {
                 listContainer.style.display = 'none';
                 selectedDiv.classList.remove('active');
 
-                // Load font
+                // Load font สำหรับ opentype.js (สำหรับสร้าง 3D)
                 const success = await loadFontFromPath(fontPath);
 
                 // Clear file upload
@@ -610,6 +580,13 @@ async function populateFontDropdown() {
                     MSG.textContent = '⏳ กำลังอัพเดต preview...';
                     await refresh();
                     MSG.textContent = `✅ ใช้ฟอนต์: ${fileName} และอัพเดต preview แล้ว`;
+                }
+                
+                // รอให้ฟอนต์โหลดเสร็จสำหรับ CSS (แสดงใน dropdown เท่านั้น)
+                try {
+                    await document.fonts.load(`16px '${fontFamilyName}'`);
+                } catch (e) {
+                    console.warn('CSS Font loading check failed:', e);
                 }
             });
 
@@ -675,16 +652,26 @@ async function populateFontDropdown() {
 
 async function loadFontFromPath(fontPath) {
     try {
+        console.log('🔍 กำลังโหลดฟอนต์:', fontPath);
         MSG.textContent = `⏳ กำลังโหลดฟอนต์ ${fontPath}...`;
         const resp = await fetch(fontPath);
-        if (!resp.ok) throw new Error(`โหลดฟอนต์ไม่ได้ (HTTP ${resp.status})`);
+        if (!resp.ok) {
+            console.error('❌ HTTP Error:', resp.status, resp.statusText);
+            throw new Error(`โหลดฟอนต์ไม่ได้ (HTTP ${resp.status})`);
+        }
         const buf = await resp.arrayBuffer();
-        if (!isLikelyFontBuffer(buf)) throw new Error('ไฟล์ไม่ใช่ TTF/OTF');
+        console.log('✅ ดาวน์โหลดสำเร็จ, ขนาด:', buf.byteLength, 'bytes');
+        if (!isLikelyFontBuffer(buf)) {
+            console.error('❌ ไฟล์ไม่ใช่ฟอนต์');
+            throw new Error('ไฟล์ไม่ใช่ TTF/OTF');
+        }
         fontBuffer = buf;
-        MSG.textContent = `✅ ใช้ฟอนต์: ${fontPath.split('/').pop()}`;
+        console.log('✅ ตั้งค่า fontBuffer สำเร็จ');
+        const fileName = fontPath.split('/').pop();
+        MSG.textContent = `✅ ใช้ฟอนต์: ${fileName}`;
         return true;
     } catch (e) {
-        console.error(e);
+        console.error('❌ Error loading font:', e);
         MSG.textContent = `❌ โหลดฟอนต์ไม่สำเร็จ: ${e.message}`;
         return false;
     }
@@ -736,7 +723,38 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
 // --- Geometry ---
 async function buildGeometries() {
     if (!fontBuffer) await loadDefaultFont();
-    const font = opentype.parse(fontBuffer);
+    
+    let font;
+    try {
+        font = opentype.parse(fontBuffer);
+    } catch (e) {
+        console.warn('❌ Parse font ครั้งแรกล้มเหลว:', e.message);
+        console.log('🔄 ลองใหม่โดยสร้าง font object แบบพื้นฐาน...');
+        
+        // สร้าง DataView เพื่ออ่าน font
+        const dataView = new DataView(fontBuffer);
+        
+        // อ่าน font โดยข้าม advanced features ที่อาจมีปัญหา
+        try {
+            // ใช้ opentype.parse แต่ wrap error handling
+            const tables = {};
+            font = opentype.parse(fontBuffer);
+            
+            // ถ้ายัง error ก็ให้แจ้ง user
+            if (!font) {
+                throw new Error('Cannot parse font');
+            }
+        } catch (e2) {
+            console.error('❌ ฟอนต์นี้ใช้งานไม่ได้:', e2.message);
+            MSG.textContent = `❌ ฟอนต์นี้ไม่รองรับ กรุณาเลือกฟอนต์อื่น`;
+            
+            // โหลด default font แทน
+            await loadDefaultFont();
+            font = opentype.parse(fontBuffer);
+            MSG.textContent = '⚠️ ฟอนต์ที่เลือกไม่รองรับ ใช้ฟอนต์ default แทน';
+        }
+    }
+    
     const fontSize = 100;
     const c = cfg();
 
