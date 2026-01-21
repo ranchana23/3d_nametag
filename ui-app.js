@@ -766,6 +766,29 @@ async function buildGeometries() {
     
     const fontSize = 100;
     const c = cfg();
+    
+    // คำนวณ scale factor ที่จะถูกใช้ภายหลัง (สำหรับ compensate ขนาดรูแขวน)
+    let futureScaleFactor = 1.0;
+    
+    // Pre-calculate scale factor if totalWidth or totalHeight is set
+    // เราจะใช้ค่านี้เพื่อ compensate ขนาดรูแขวนให้คงที่
+    if (Number.isFinite(c.totalHeight) && c.totalHeight > 0 && window.currentFont) {
+        const font = window.currentFont;
+        let capHeight = 0;
+        if (font.tables?.os2?.sCapHeight) {
+            capHeight = font.tables.os2.sCapHeight;
+        } else if (font.ascender) {
+            capHeight = font.ascender;
+        }
+        if (capHeight > 0 && font.unitsPerEm) {
+            const capHeightInMM = (capHeight / font.unitsPerEm) * fontSize * c.mmPerUnit;
+            futureScaleFactor = c.totalHeight / capHeightInMM;
+        }
+    } else if (Number.isFinite(c.totalWidth) && c.totalWidth > 0) {
+        // ถ้าใช้ totalWidth ต้องคำนวณแบบคร่าวๆ (ยากกว่า ใช้ค่าประมาณ)
+        // สำหรับตอนนี้ ถ้าไม่มี totalHeight ก็ใช้ค่า default
+        futureScaleFactor = 1.0;
+    }
 
     // helper ภายใน: กรอบมุมโค้ง (หน่วย: FU = font units)
     function roundedRectShapeFU(x, y, w, h, rFU) {
@@ -832,9 +855,10 @@ async function buildGeometries() {
         });
         if (c.earEnabled) {
             // Always use mm for ear/hole features, not affected by scaling
-            const rHoleMM = c.holeDiameter * 0.5;
-            const rOuterMM = rHoleMM + c.earRingThickness;
-            const attachMM = c.earAttachOverlap;
+            // ปรับขนาดรูแขวนโดย compensate scale factor ที่จะถูกใช้ภายหลัง
+            const rHoleMM = (c.holeDiameter * 0.5) / futureScaleFactor;
+            const rOuterMM = rHoleMM + (c.earRingThickness / futureScaleFactor);
+            const attachMM = c.earAttachOverlap / futureScaleFactor;
 
             // Calculate center position based on side
             let cxMM, yCenterMM;
@@ -997,11 +1021,12 @@ async function buildGeometries() {
 
         // --- โหมดหูด้านข้างเดิม (อยู่หลังจากนี้ตามโค้ดคุณ)
         if (c.earEnabled && (c.earPlacement || 'side') === 'side') {
-            const rHole = c.holeDiameter * 0.5;
-            const rOuter = rHole + c.earRingThickness;
+            // ปรับขนาดรูแขวนโดย compensate scale factor ที่จะถูกใช้ภายหลัง
+            const rHole = (c.holeDiameter * 0.5) / futureScaleFactor;
+            const rOuter = rHole + (c.earRingThickness / futureScaleFactor);
             const rOuterFU = rOuter / c.mmPerUnit;
             const rHoleFU = rHole / c.mmPerUnit;
-            const attachFU = c.earAttachOverlap / c.mmPerUnit;
+            const attachFU = (c.earAttachOverlap / futureScaleFactor) / c.mmPerUnit;
 
             let cxFU, yCenterFU;
 
