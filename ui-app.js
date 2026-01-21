@@ -1231,50 +1231,107 @@ function resize() {
 }
 renderer.setAnimationLoop(() => { resize(); renderer.render(scene, camera); });
 
-// Viewport controls
-function setCameraView(view) {
-    // คำนวณ centroid จาก baseMesh/textMesh
+// Viewport controls - สถานะ 1:1
+let isRealScale = false;
+let currentView = 'front';
+
+// ฟังก์ชันคำนวณ centroid และขนาดโมเดล
+function getModelBounds() {
     const tempGroup = new THREE.Group();
     if (baseMesh) tempGroup.add(baseMesh.clone());
     if (textMesh) tempGroup.add(textMesh.clone());
+    layers.forEach(layer => {
+        if (layer.visible && layer.mesh) {
+            tempGroup.add(layer.mesh.clone());
+        }
+    });
     const box = new THREE.Box3().setFromObject(tempGroup);
     tempGroup.clear();
+    return box;
+}
+
+// ฟังก์ชันตั้งค่า camera ตามมุมมองและ scale
+function setCameraViewAndScale(view, useRealScale) {
+    const box = getModelBounds();
     if (!isFinite(box.min.x) || !isFinite(box.max.x)) return;
+    
     const centroid = box.getCenter(new THREE.Vector3());
     const sizeVec = box.getSize(new THREE.Vector3());
-    const size = sizeVec.length();
+    
+    let distance;
+    if (useRealScale) {
+        // คำนวณระยะสำหรับ 1:1
+        const widthMM = sizeVec.x;
+        const heightMM = sizeVec.y;
+        const dpi = window.devicePixelRatio * 96;
+        const pixelsPerMM = dpi / 25.4;
+        const targetWidthPx = widthMM * pixelsPerMM;
+        const targetHeightPx = heightMM * pixelsPerMM;
+        const maxDimPx = Math.max(targetWidthPx, targetHeightPx);
+        const maxDimMM = Math.max(widthMM, heightMM);
+        const fov = camera.fov * (Math.PI / 180);
+        distance = (maxDimMM / 2) / Math.tan(fov / 2) * (canvas.clientHeight / maxDimPx);
+    } else {
+        // ใช้ระยะปกติ
+        distance = sizeVec.length();
+    }
+    
     let pos = { x: centroid.x, y: centroid.y, z: centroid.z };
     switch (view) {
         case 'top':
-            pos.z += size;
+            pos.z += distance;
             break;
         case 'bottom':
-            pos.z -= size;
+            pos.z -= distance;
             break;
         case 'front':
-            pos.y -= size;
+            pos.y -= distance;
             break;
         case 'back':
-            pos.y += size;
+            pos.y += distance;
             break;
         case 'side':
-            pos.x += size;
+            pos.x += distance;
             break;
         default:
-            pos.z += size;
+            pos.y -= distance;
     }
+    
     camera.position.set(pos.x, pos.y, pos.z);
     controls.target.copy(centroid);
     controls.update();
 }
-document.querySelectorAll('#viewport-controls button').forEach(btn => {
+
+// Event listeners สำหรับปุ่มมุมมอง
+document.querySelectorAll('#viewport-controls button[data-view]').forEach(btn => {
     btn.addEventListener('click', e => {
-        setCameraView(btn.dataset.view);
+        currentView = btn.dataset.view;
+        setCameraViewAndScale(currentView, isRealScale);
         // If TransformControls is active, update its camera reference
         if (window.currentTransform) {
             window.currentTransform.camera = camera;
         }
     });
+});
+
+// Event listener สำหรับปุ่ม 1:1
+document.getElementById('scale-100')?.addEventListener('click', () => {
+    isRealScale = !isRealScale; // Toggle
+    setCameraViewAndScale(currentView, isRealScale);
+    
+    if (isRealScale) {
+        const box = getModelBounds();
+        const sizeVec = box.getSize(new THREE.Vector3());
+        const btn = document.getElementById('scale-100');
+        btn.style.background = '#F2AEBB';
+        btn.style.borderColor = '#696FC7';
+        MSG.textContent = `✅ แสดงขนาดจริง 1:1 (${Math.round(sizeVec.x * 100) / 100} × ${Math.round(sizeVec.y * 100) / 100} × ${Math.round(sizeVec.z * 100) / 100} mm)`;
+    } else {
+        const btn = document.getElementById('scale-100');
+        btn.style.background = '#696FC7';
+        btn.style.borderColor = '#A7AAE1';
+        MSG.textContent = '✅ ปิดโหมด 1:1';
+    }
 });
 // ===== Style UI toggle =====
 function applyStyleUI() {
