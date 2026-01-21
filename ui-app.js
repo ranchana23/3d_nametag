@@ -1345,9 +1345,17 @@ document.querySelector('#add').addEventListener('click', async () => {
         MSG.textContent = 'มีข้อผิดพลาดตอนเพิ่ม nametag (ดู Console)';
     }
 });
-document.querySelectorAll('input,select').forEach(el => {
-    el.addEventListener('input', () => { if (el.id !== 'font') refresh(); });
+
+// Preview button - แสดงผลเมื่อกดเท่านั้น
+document.querySelector('#preview').addEventListener('click', async () => {
+    await refresh();
 });
+
+// ลบ auto-refresh เมื่อ input เปลี่ยนแปลง
+// document.querySelectorAll('input,select').forEach(el => {
+//     el.addEventListener('input', () => { if (el.id !== 'font') refresh(); });
+// });
+
 document.querySelector('#font').addEventListener('change', async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     const buf = await f.arrayBuffer();
