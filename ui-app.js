@@ -26,19 +26,21 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!toggleBtn) {
             toggleBtn = document.createElement('button');
             toggleBtn.id = 'toggle-layer-list';
-            toggleBtn.textContent = 'แสดง/ซ่อน';
+            toggleBtn.innerHTML = '<i class="fa fa-eye-slash"></i>';
+            toggleBtn.title = 'แสดง/ซ่อน';
             toggleBtn.style.fontFamily = "'Noto Sans Thai Looped', sans-serif";
-            toggleBtn.style.fontSize = '12px';
+            toggleBtn.style.fontSize = '11px';
             toggleBtn.style.fontWeight = '600';
-            toggleBtn.style.padding = '6px 14px';
+            toggleBtn.style.padding = '4px 10px';
             toggleBtn.style.background = '#696FC7';
             toggleBtn.style.color = '#fff';
             toggleBtn.style.border = '2px solid #A7AAE1';
-            toggleBtn.style.borderRadius = '10px';
+            toggleBtn.style.borderRadius = '8px';
             toggleBtn.style.cursor = 'pointer';
             toggleBtn.style.transition = 'all 0.2s ease';
             toggleBtn.style.float = 'right';
-            toggleBtn.style.marginLeft = '8px';
+            toggleBtn.style.marginLeft = '6px';
+            toggleBtn.style.marginTop = '-2px';
             toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
 
             // hover effect
@@ -58,7 +60,9 @@ window.addEventListener('DOMContentLoaded', () => {
             // click event - add เฉพาะครั้งแรกที่สร้างปุ่ม
             toggleBtn.addEventListener('click', () => {
                 const list = document.getElementById('layer-list');
-                list.style.display = (list.style.display === 'none') ? 'block' : 'none';
+                const isHidden = list.style.display === 'none';
+                list.style.display = isHidden ? 'block' : 'none';
+                toggleBtn.innerHTML = isHidden ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
             });
 
             panel.querySelector('h3').appendChild(toggleBtn);

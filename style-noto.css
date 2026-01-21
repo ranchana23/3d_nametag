@@ -765,81 +765,83 @@ select:active {
     }
 }
 
- 
- / *   F l o a t i n g   P a n e l s   * / 
- 
- # l a y e r - l i s t - p a n e l   { 
- 
-         p o s i t i o n :   a b s o l u t e ; 
- 
-         b o t t o m :   2 0 p x ; 
- 
-         r i g h t :   2 0 p x ; 
- 
-         z - i n d e x :   1 0 ; 
- 
-         b a c k g r o u n d :   # f f f f f f ; 
- 
-         b o r d e r - r a d i u s :   1 2 p x ; 
- 
-         p a d d i n g :   1 6 p x ; 
- 
-         b o x - s h a d o w :   v a r ( - - s h a d o w ) ; 
- 
-         m i n - w i d t h :   2 4 0 p x ; 
- 
-         b o r d e r :   1 p x   s o l i d   v a r ( - - l i n e ) ; 
- 
- } 
- 
- 
- 
- # v i e w p o r t - c o n t r o l s   { 
- 
-         p o s i t i o n :   a b s o l u t e ; 
- 
-         t o p :   2 0 p x ; 
- 
-         r i g h t :   2 0 p x ; 
- 
-         z - i n d e x :   1 0 ; 
- 
-         d i s p l a y :   f l e x ; 
- 
-         g a p :   8 p x ; 
- 
-         b a c k g r o u n d :   # f f f f f f ; 
- 
-         p a d d i n g :   1 0 p x ; 
- 
-         b o r d e r - r a d i u s :   1 2 p x ; 
- 
-         b o x - s h a d o w :   v a r ( - - s h a d o w ) ; 
- 
-         b o r d e r :   1 p x   s o l i d   v a r ( - - l i n e ) ; 
- 
- } 
- 
- 
- 
- # d i m - t e x t ,   . d i m - t e x t   { 
- 
-         d i s p l a y :   i n l i n e - b l o c k ; 
- 
-         b a c k g r o u n d :   v a r ( - - s e c o n d a r y ) ; 
- 
-         c o l o r :   v a r ( - - t e x t - p r i m a r y ) ; 
- 
-         p a d d i n g :   8 p x   1 2 p x ; 
- 
-         b o r d e r - r a d i u s :   8 p x ; 
- 
-         f o n t - s i z e :   1 3 p x ; 
- 
-         f o n t - w e i g h t :   6 0 0 ; 
- 
-         b o r d e r :   1 p x   s o l i d   v a r ( - - l i n e ) ; 
- 
- } 
- 
- 
+/* Floating Panels */
+
+#layer-list-panel {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 10;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    min-width: 240px;
+    max-width: 280px;
+    border: 1px solid var(--line);
+}
+
+#viewport-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    background: #ffffff;
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    flex-wrap: wrap;
+    max-width: calc(100vw - 520px);
+}
+
+#dim-text, .dim-text {
+    display: inline-block;
+    background: var(--secondary);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--line);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    #viewport-controls {
+        gap: 4px;
+        padding: 6px;
+    }
+    
+    #viewport-controls .btn {
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        min-width: 60px !important;
+    }
+    
+    #layer-list-panel {
+        max-width: 220px;
+        min-width: 200px;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    #viewport-controls {
+        top: 5px;
+        right: 5px;
+        gap: 3px;
+        padding: 4px;
+    }
+    
+    #layer-list-panel {
+        bottom: 5px;
+        left: 5px;
+        max-width: 200px;
+        min-width: 180px;
+        padding: 10px;
+    }
+}
+
