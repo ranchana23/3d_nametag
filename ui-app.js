@@ -1445,6 +1445,72 @@ document.querySelector('#add').addEventListener('click', async () => {
 // Preview button - แสดงผลเมื่อกดเท่านั้น
 document.querySelector('#preview').addEventListener('click', async () => {
     await refresh();
+    
+    // ตั้งค่า default: 1:1 และ Top view
+    // เปิดโหมด 1:1 ถ้ายังไม่เปิด
+    if (!isRealScale) {
+        isRealScale = true;
+        const btn = document.getElementById('scale-100');
+        if (btn) {
+            btn.style.background = '#F2AEBB';
+            btn.style.borderColor = '#696FC7';
+        }
+    }
+    
+    // ตั้งมุมมองเป็น Top
+    currentView = 'top';
+    setCameraViewAndScale(currentView, isRealScale);
+    
+    const box = getModelBounds();
+    if (isFinite(box.min.x) && isFinite(box.max.x)) {
+        const sizeVec = box.getSize(new THREE.Vector3());
+        MSG.textContent = `✅ แสดงขนาดจริง 1:1 - Top View (${Math.round(sizeVec.x * 100) / 100} × ${Math.round(sizeVec.y * 100) / 100} × ${Math.round(sizeVec.z * 100) / 100} mm)`;
+    }
+});
+
+// Size preset buttons (S M L)
+document.querySelectorAll('.size-preset').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const size = parseInt(btn.dataset.size);
+        const totalHeightInput = document.querySelector('#totalHeight');
+        if (totalHeightInput) {
+            totalHeightInput.value = size;
+            // ปรับสีปุ่มที่เลือก
+            document.querySelectorAll('.size-preset').forEach(b => {
+                b.style.background = '';
+                b.style.borderColor = '';
+                b.classList.remove('active');
+            });
+            btn.style.background = '#696FC7';
+            btn.style.borderColor = '#A7AAE1';
+            btn.style.color = '#fff';
+            btn.classList.add('active');
+            
+            // Preview ทันที
+            await refresh();
+            
+            // ตั้งค่า default: 1:1 และ Top view
+            // เปิดโหมด 1:1 ถ้ายังไม่เปิด
+            if (!isRealScale) {
+                isRealScale = true;
+                const scale100Btn = document.getElementById('scale-100');
+                if (scale100Btn) {
+                    scale100Btn.style.background = '#F2AEBB';
+                    scale100Btn.style.borderColor = '#696FC7';
+                }
+            }
+            
+            // ตั้งมุมมองเป็น Top
+            currentView = 'top';
+            setCameraViewAndScale(currentView, isRealScale);
+            
+            const box = getModelBounds();
+            if (isFinite(box.min.x) && isFinite(box.max.x)) {
+                const sizeVec = box.getSize(new THREE.Vector3());
+                MSG.textContent = `✅ ขนาด ${size} mm - 1:1 Top View (${Math.round(sizeVec.x * 100) / 100} × ${Math.round(sizeVec.y * 100) / 100} × ${Math.round(sizeVec.z * 100) / 100} mm)`;
+            }
+        }
+    });
 });
 
 // ลบ auto-refresh เมื่อ input เปลี่ยนแปลง
