@@ -456,6 +456,8 @@ function isLikelyFontBuffer(buf) {
 }
 
 let fontBuffer = null;
+window.currentFont = null; // เก็บ font object ไว้ใช้ใน scaleToTargetHeight (global)
+
 async function loadDefaultFont() {
     if (fontBuffer) return;
     const resp = await fetch('./iann_b.ttf');
@@ -731,6 +733,7 @@ async function buildGeometries() {
     let font;
     try {
         font = opentype.parse(fontBuffer);
+        window.currentFont = font; // เก็บไว้ใช้ใน scaleToTargetHeight
     } catch (e) {
         console.warn('❌ Parse font ครั้งแรกล้มเหลว:', e.message);
         console.log('🔄 ลองใหม่โดยสร้าง font object แบบพื้นฐาน...');
@@ -743,6 +746,7 @@ async function buildGeometries() {
             // ใช้ opentype.parse แต่ wrap error handling
             const tables = {};
             font = opentype.parse(fontBuffer);
+            window.currentFont = font; // เก็บไว้ใช้ใน scaleToTargetHeight
             
             // ถ้ายัง error ก็ให้แจ้ง user
             if (!font) {
@@ -755,6 +759,7 @@ async function buildGeometries() {
             // โหลด default font แทน
             await loadDefaultFont();
             font = opentype.parse(fontBuffer);
+            window.currentFont = font; // เก็บไว้ใช้ใน scaleToTargetHeight
             MSG.textContent = '⚠️ ฟอนต์ที่เลือกไม่รองรับ ใช้ฟอนต์ default แทน';
         }
     }
@@ -1103,7 +1108,37 @@ function scaleToTargetHeight(baseGeom, textGeom, targetHeightMM) {
     if (!attr) return;
 
     const box = new THREE.Box3().setFromBufferAttribute(attr);
-    const currentHeight = box.max.y - box.min.y;
+    
+    // คำนวณความสูงจาก font metrics แทน bounding box
+    // ใช้ cap height หรือ ascender เพื่อวัดความสูงตัวอักษรหลัก (ไม่รวมสระบน-ล่าง)
+    const c = cfg();
+    let currentHeight = box.max.y - box.min.y;
+    
+    // ถ้ามี font และสามารถดึง metrics ได้
+    if (window.currentFont) {
+        const font = window.currentFont;
+        const fontSize = 100; // ค่าเดียวกับที่ใช้ใน buildGeometries
+        
+        // ใช้ ascender - descender เป็นความสูงมาตรฐานของฟอนต์
+        // แต่เราต้องการเฉพาะส่วนที่เป็นตัวอักษรหลัก (ไม่รวมสระบน-ล่าง)
+        // ใช้ cap height ถ้ามี หรือ ascender
+        let capHeight = 0;
+        
+        if (font.tables?.os2?.sCapHeight) {
+            // Cap height จาก OS/2 table (ความสูงของตัวพิมพ์ใหญ่)
+            capHeight = font.tables.os2.sCapHeight;
+        } else if (font.ascender) {
+            // ใช้ ascender แทน (ความสูงจากฐานถึงด้านบนสุดของตัวอักษร)
+            capHeight = font.ascender;
+        }
+        
+        if (capHeight > 0 && font.unitsPerEm) {
+            // แปลงจาก font units เป็น mm
+            const capHeightInMM = (capHeight / font.unitsPerEm) * fontSize * c.mmPerUnit;
+            currentHeight = capHeightInMM;
+        }
+    }
+    
     if (currentHeight <= 0) return;
 
     const k = targetHeightMM / currentHeight;
