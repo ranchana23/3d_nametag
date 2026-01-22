@@ -653,7 +653,7 @@ async function populateFontDropdown() {
         }
     });
 
-    console.log(`✅ สร้าง custom dropdown พร้อมตัวอย่างฟอนต์ ${FONT_LIST.length} ฟอนต์`);
+    console.log(`✅ สร้าง custom dropdown สำเร็จ`);
 }
 
 async function loadFontFromPath(fontPath) {
@@ -695,7 +695,25 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
     const scale = fontSize / font.unitsPerEm;      // font units -> path units
     const spacingPath = spacingFU * scale;         // path units
 
-    const glyphs = font.stringToGlyphs(text);
+    let glyphs;
+    try {
+        // ปิด OpenType features ที่อาจทำให้เกิด error
+        glyphs = font.stringToGlyphs(text, { features: {} });
+    } catch (e) {
+        console.warn('⚠️ ฟอนต์มี features ที่ไม่รองรับ, ใช้โหมดพื้นฐาน:', e.message);
+        // fallback: แปลงเป็น glyphs แบบไม่ใช้ features
+        try {
+            glyphs = [];
+            for (let i = 0; i < text.length; i++) {
+                const glyph = font.charToGlyph(text.charAt(i));
+                if (glyph) glyphs.push(glyph);
+            }
+        } catch (e2) {
+            console.error('❌ ไม่สามารถแปลงข้อความเป็น glyphs:', e2);
+            return path;
+        }
+    }
+    
     let x = 0;
     const y = 0;
 
@@ -703,8 +721,13 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
         const g = glyphs[i];
 
         // เพิ่ม path ของ glyph นี้
-        const gp = g.getPath(x, y, fontSize);
-        gp.commands.forEach(cmd => path.commands.push(cmd));
+        try {
+            const gp = g.getPath(x, y, fontSize);
+            gp.commands.forEach(cmd => path.commands.push(cmd));
+        } catch (e) {
+            console.warn(`⚠️ ไม่สามารถสร้าง path สำหรับตัวอักษร "${text.charAt(i)}":`, e.message);
+            // ข้ามตัวอักษรที่มีปัญหา
+        }
 
         // ระยะขยับสำหรับ glyph ถัดไป = advance + kerning + letterSpacing
         let advance = (g.advanceWidth || 0) * scale;
@@ -712,9 +735,13 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
         // kerning (ใน font units) -> path units
         if (i < glyphs.length - 1) {
             const next = glyphs[i + 1];
-            const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0; // font units
-            const kernPath = kernFU * scale;
-            advance += kernPath;
+            try {
+                const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0; // font units
+                const kernPath = kernFU * scale;
+                advance += kernPath;
+            } catch (e) {
+                // ถ้า kerning มีปัญหา ก็ข้าม
+            }
         }
 
         // เพิ่ม letter spacing (path units)
