@@ -256,6 +256,16 @@ input[type="file"] {
     color: var(--primary);
 }
 
+.btn.size-preset {
+    margin-left: 8px;
+    padding: 10px 14px;
+    min-width: 50px;
+}
+
+.btn.size-preset:not(:first-of-type) {
+    margin-left: 4px;
+}
+
 .btn:active {
     transform: translateY(1px);
 }

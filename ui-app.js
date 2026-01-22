@@ -32,29 +32,29 @@ window.addEventListener('DOMContentLoaded', () => {
             toggleBtn.style.fontSize = '11px';
             toggleBtn.style.fontWeight = '600';
             toggleBtn.style.padding = '4px 10px';
-            toggleBtn.style.background = '#696FC7';
+            toggleBtn.style.background = '#333333';
             toggleBtn.style.color = '#fff';
-            toggleBtn.style.border = '2px solid #A7AAE1';
+            toggleBtn.style.border = '1px solid #E5E5E5';
             toggleBtn.style.borderRadius = '8px';
             toggleBtn.style.cursor = 'pointer';
             toggleBtn.style.transition = 'all 0.2s ease';
             toggleBtn.style.float = 'right';
             toggleBtn.style.marginLeft = '6px';
             toggleBtn.style.marginTop = '-2px';
-            toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
+            toggleBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
 
             // hover effect
             toggleBtn.addEventListener('mouseenter', () => {
-                toggleBtn.style.background = '#F2AEBB';
-                toggleBtn.style.borderColor = '#696FC7';
+                toggleBtn.style.background = '#555555';
+                toggleBtn.style.borderColor = '#333333';
                 toggleBtn.style.transform = 'translateY(-1px)';
-                toggleBtn.style.boxShadow = '0 4px 10px rgba(105,111,199,0.3)';
+                toggleBtn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.1)';
             });
             toggleBtn.addEventListener('mouseleave', () => {
-                toggleBtn.style.background = '#696FC7';
-                toggleBtn.style.borderColor = '#A7AAE1';
+                toggleBtn.style.background = '#333333';
+                toggleBtn.style.borderColor = '#E5E5E5';
                 toggleBtn.style.transform = 'translateY(0)';
-                toggleBtn.style.boxShadow = '0 2px 6px rgba(105,111,199,0.2)';
+                toggleBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
             });
 
             // click event - add เฉพาะครั้งแรกที่สร้างปุ่ม
@@ -1410,13 +1410,13 @@ document.getElementById('scale-100')?.addEventListener('click', () => {
         const box = getModelBounds();
         const sizeVec = box.getSize(new THREE.Vector3());
         const btn = document.getElementById('scale-100');
-        btn.style.background = '#F2AEBB';
-        btn.style.borderColor = '#696FC7';
+        btn.style.background = '#555555';
+        btn.style.borderColor = '#333333';
         MSG.textContent = `✅ แสดงขนาดจริง 1:1 (${Math.round(sizeVec.x * 100) / 100} × ${Math.round(sizeVec.y * 100) / 100} × ${Math.round(sizeVec.z * 100) / 100} mm)`;
     } else {
         const btn = document.getElementById('scale-100');
-        btn.style.background = '#696FC7';
-        btn.style.borderColor = '#A7AAE1';
+        btn.style.background = '#333333';
+        btn.style.borderColor = '#E5E5E5';
         MSG.textContent = '✅ ปิดโหมด 1:1';
     }
 });
@@ -1504,8 +1504,8 @@ document.querySelector('#preview').addEventListener('click', async () => {
         isRealScale = true;
         const btn = document.getElementById('scale-100');
         if (btn) {
-            btn.style.background = '#F2AEBB';
-            btn.style.borderColor = '#696FC7';
+            btn.style.background = '#555555';
+            btn.style.borderColor = '#333333';
         }
     }
     
@@ -1531,10 +1531,11 @@ document.querySelectorAll('.size-preset').forEach(btn => {
             document.querySelectorAll('.size-preset').forEach(b => {
                 b.style.background = '';
                 b.style.borderColor = '';
+                b.style.color = '';
                 b.classList.remove('active');
             });
-            btn.style.background = '#696FC7';
-            btn.style.borderColor = '#A7AAE1';
+            btn.style.background = '#333333';
+            btn.style.borderColor = '#333333';
             btn.style.color = '#fff';
             btn.classList.add('active');
             
@@ -1547,8 +1548,8 @@ document.querySelectorAll('.size-preset').forEach(btn => {
                 isRealScale = true;
                 const scale100Btn = document.getElementById('scale-100');
                 if (scale100Btn) {
-                    scale100Btn.style.background = '#F2AEBB';
-                    scale100Btn.style.borderColor = '#696FC7';
+                    scale100Btn.style.background = '#555555';
+                    scale100Btn.style.borderColor = '#333333';
                 }
             }
             
