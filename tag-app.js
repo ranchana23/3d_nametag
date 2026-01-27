@@ -532,21 +532,16 @@ function opentypePathToShapes(pathData) {
     const commands = pathData.commands;
     if (!commands || commands.length === 0) return shapes;
 
-    let currentShape = null;
+    // Collect all closed paths first
+    const paths = [];
     let currentPath = null;
 
     for (let i = 0; i < commands.length; i++) {
         const cmd = commands[i];
         
         if (cmd.type === 'M') { // Move to (start new path)
-            if (currentPath) {
-                if (currentPath.curves.length > 0) {
-                    if (currentShape) {
-                        currentShape.holes.push(currentPath);
-                    } else {
-                        currentShape = currentPath;
-                    }
-                }
+            if (currentPath && currentPath.curves.length > 0) {
+                paths.push(currentPath);
             }
             currentPath = new THREE.Shape();
             currentPath.moveTo(cmd.x, -cmd.y); // Flip Y for Three.js
@@ -568,28 +563,42 @@ function opentypePathToShapes(pathData) {
                 );
             }
         } else if (cmd.type === 'Z') { // Close path
-            // Path completed
             if (currentPath && currentPath.curves.length > 0) {
-                if (currentShape && currentShape !== currentPath) {
-                    currentShape.holes.push(currentPath);
-                } else if (!currentShape) {
-                    currentShape = currentPath;
-                }
+                paths.push(currentPath);
                 currentPath = null;
             }
         }
     }
 
-    // Add last path if exists
+    // Add last path if exists and not closed
     if (currentPath && currentPath.curves.length > 0) {
-        if (currentShape && currentShape !== currentPath) {
-            currentShape.holes.push(currentPath);
-        } else {
-            currentShape = currentPath;
-        }
+        paths.push(currentPath);
     }
 
-    if (currentShape) shapes.push(currentShape);
+    if (paths.length === 0) return shapes;
+
+    // Determine which paths are holes using winding order or area
+    // Larger paths are typically outlines, smaller ones are holes
+    const pathsWithArea = paths.map(path => {
+        const area = Math.abs(THREE.ShapeUtils.area(path.getPoints()));
+        return { path, area };
+    });
+
+    // Sort by area (largest first)
+    pathsWithArea.sort((a, b) => b.area - a.area);
+
+    // First path (largest) is the main shape
+    if (pathsWithArea.length > 0) {
+        const mainShape = pathsWithArea[0].path;
+        
+        // Remaining paths are potential holes
+        for (let i = 1; i < pathsWithArea.length; i++) {
+            mainShape.holes.push(pathsWithArea[i].path);
+        }
+        
+        shapes.push(mainShape);
+    }
+
     return shapes;
 }
 
@@ -606,11 +615,117 @@ function createTextFromOpentype(text, fontSize, extrudeDepth) {
         
         if (glyph && glyph.path) {
             const path = glyph.getPath(xOffset, 0, fontSize);
-            const shapes = opentypePathToShapes(path);
             
-            shapes.forEach(shape => {
-                allShapes.push(shape);
-            });
+            // Get all paths for this glyph
+            const glyphPaths = [];
+            const commands = path.commands;
+            let currentPath = null;
+
+            for (let j = 0; j < commands.length; j++) {
+                const cmd = commands[j];
+                
+                if (cmd.type === 'M') {
+                    if (currentPath && currentPath.curves.length > 0) {
+                        glyphPaths.push(currentPath);
+                    }
+                    currentPath = new THREE.Shape();
+                    currentPath.moveTo(cmd.x, -cmd.y);
+                } else if (cmd.type === 'L') {
+                    if (currentPath) currentPath.lineTo(cmd.x, -cmd.y);
+                } else if (cmd.type === 'C') {
+                    if (currentPath) {
+                        currentPath.bezierCurveTo(
+                            cmd.x1, -cmd.y1,
+                            cmd.x2, -cmd.y2,
+                            cmd.x, -cmd.y
+                        );
+                    }
+                } else if (cmd.type === 'Q') {
+                    if (currentPath) {
+                        currentPath.quadraticCurveTo(
+                            cmd.x1, -cmd.y1,
+                            cmd.x, -cmd.y
+                        );
+                    }
+                } else if (cmd.type === 'Z') {
+                    if (currentPath && currentPath.curves.length > 0) {
+                        glyphPaths.push(currentPath);
+                        currentPath = null;
+                    }
+                }
+            }
+
+            if (currentPath && currentPath.curves.length > 0) {
+                glyphPaths.push(currentPath);
+            }
+
+            // Process paths to determine which are holes using winding order
+            if (glyphPaths.length > 0) {
+                const pathsWithInfo = glyphPaths.map(p => {
+                    const points = p.getPoints();
+                    const area = THREE.ShapeUtils.area(points);
+                    return {
+                        path: p,
+                        points: points,
+                        area: area,
+                        absArea: Math.abs(area),
+                        isCCW: area > 0
+                    };
+                });
+
+                // Sort by absolute area (largest first)
+                pathsWithInfo.sort((a, b) => b.absArea - a.absArea);
+
+                // First approach: use winding order
+                let outlines = pathsWithInfo.filter(p => p.isCCW);
+                let holes = pathsWithInfo.filter(p => !p.isCCW);
+
+                // If all paths have the same winding, use area-based approach
+                if (outlines.length === 0 || holes.length === 0) {
+                    // Largest path is the outline
+                    if (pathsWithInfo.length > 0) {
+                        const mainShape = pathsWithInfo[0].path;
+                        
+                        // Check each smaller path to see if it's inside the main shape
+                        for (let idx = 1; idx < pathsWithInfo.length; idx++) {
+                            const candidateHole = pathsWithInfo[idx];
+                            if (candidateHole.points.length > 0) {
+                                const testPoint = candidateHole.points[0];
+                                if (isPointInPolygon(testPoint, pathsWithInfo[0].points)) {
+                                    mainShape.holes.push(candidateHole.path);
+                                }
+                            }
+                        }
+                        
+                        allShapes.push(mainShape);
+                    }
+                } else if (pathsWithInfo.length === 1) {
+                    // Single path - just add it
+                    allShapes.push(pathsWithInfo[0].path);
+                } else {
+                    // Multiple paths with mixed winding - match holes to outlines
+                    const usedHoles = new Set();
+                    
+                    outlines.forEach(outline => {
+                        const shape = outline.path;
+                        
+                        // Find holes that are inside this outline
+                        holes.forEach((hole, holeIdx) => {
+                            if (usedHoles.has(holeIdx)) return;
+                            
+                            if (hole.points.length > 0) {
+                                const testPoint = hole.points[0];
+                                if (isPointInPolygon(testPoint, outline.points)) {
+                                    shape.holes.push(hole.path);
+                                    usedHoles.add(holeIdx);
+                                }
+                            }
+                        });
+                        
+                        allShapes.push(shape);
+                    });
+                }
+            }
             
             // Advance for next character
             if (i < text.length - 1) {
@@ -638,6 +753,20 @@ function createTextFromOpentype(text, fontSize, extrudeDepth) {
     const textHeight = geometry.boundingBox.max.y - geometry.boundingBox.min.y;
     
     return { geometry, textWidth, textHeight };
+}
+
+// Helper function: check if point is inside polygon using ray casting
+function isPointInPolygon(point, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x, yi = polygon[i].y;
+        const xj = polygon[j].x, yj = polygon[j].y;
+        
+        const intersect = ((yi > point.y) !== (yj > point.y))
+            && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
 }
 
 // Create multiline text geometry

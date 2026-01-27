@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tag Creator - 3D Rectangle</title>
+    <title>Tagbag Creator - Multi-line Text Extrude</title>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -20,11 +20,11 @@
             <i class="fa fa-id-card"></i>
             <span>Nametag</span>
         </a>
-        <a href="tag.html" class="nav-link active">
+        <a href="tag.html" class="nav-link">
             <i class="fa fa-square"></i>
             <span>Rectangle</span>
         </a>
-        <a href="tagbag.html" class="nav-link">
+        <a href="tagbag.html" class="nav-link active">
             <i class="fa fa-text-height"></i>
             <span>Tagbag</span>
         </a>
@@ -43,17 +43,17 @@
     </nav>
 
     <aside>
-        <h2><i class="fa fa-square"></i> Rectangle Tag Creator</h2>
+        <h2><i class="fa fa-text-height"></i> Tagbag Creator</h2>
         
         <fieldset>
             <legend>ข้อความ</legend>
             <label>
-                ชื่อ (Name):
-                <textarea id="tagName" rows="3" placeholder="ใส่ชื่อ... (รองรับหลายบรรทัด)" style="width:100%;resize:vertical;font-family:'Noto Sans Thai Looped',sans-serif;font-size:14px;padding:8px;"></textarea>
+                ข้อความ (Text):
+                <textarea id="tagName" rows="4" placeholder="ใส่ชื่อ... (รองรับหลายบรรทัด)" style="width:100%;resize:vertical;font-family:'Noto Sans Thai Looped',sans-serif;font-size:14px;padding:8px;">Ranchana</textarea>
                 <span class="muted">กด Enter เพื่อขึ้นบรรทัดใหม่</span>
             </label>
             <label>
-                ขนาดฟอนต์ (Font Size):
+                ขนาดฟอนต์เริ่มต้น (Font Size):
                 <input type="number" id="fontSize" value="5" min="1" max="20" step="0.5">
                 <span class="muted">หน่วย: mm (ขนาดเริ่มต้นสำหรับทุกบรรทัด)</span>
             </label>
@@ -66,9 +66,9 @@
             </div>
             
             <label>
-                ความสูงข้อความ (Text Height):
-                <input type="number" id="textHeight" value="4" min="0.5" max="20" step="0.5">
-                <span class="muted">mm - ความสูงที่ยื่นขึ้นมาจากฐาน</span>
+                ความสูงข้อความ (Extrude Depth):
+                <input type="number" id="textHeight" value="2" min="0.5" max="20" step="0.5">
+                <span class="muted">mm - ความสูงที่ยื่นออกมา</span>
             </label>
             <label>
                 ระยะห่างระหว่างบรรทัด (Line Spacing):
@@ -83,7 +83,7 @@
             <!-- Custom Font Dropdown -->
             <div id="fontDropdownWrapper" class="custom-select-wrapper">
                 <div id="fontDropdownSelected" class="custom-select-selected">
-                    Helvetiker (Default)
+                    texgyreadventor-regular (Default)
                 </div>
                 <div id="fontDropdownList" class="custom-select-items" style="display:none;">
                     <!-- Options will be populated by JavaScript -->
@@ -127,40 +127,12 @@
                 </div>
             </div>
         </fieldset>
-        
-        <fieldset>
-            <legend>ขนาด (mm)</legend>
-            <label>
-                ความกว้าง (Width):
-                <input type="number" id="rectWidth" value="80" min="10" max="300" step="1">
-            </label>
-            <label>
-                ความยาว (Length):
-                <input type="number" id="rectLength" value="50" min="10" max="300" step="1">
-            </label>
-            <label>
-                ความสูงฐาน (Base Height):
-                <input type="number" id="rectHeight" value="3" min="1" max="50" step="0.5">
-            </label>
-        </fieldset>
-
-        <fieldset>
-            <legend>มุมโค้ง</legend>
-            <label>
-                รัศมีมุมโค้ง (Corner Radius):
-                <input type="number" id="cornerRadius" value="5" min="0" max="50" step="0.5">
-            </label>
-        </fieldset>
 
         <fieldset>
             <legend>สี</legend>
             <label>
-                สีฐาน (Base Color):
-                <input type="color" id="rectColor" value="#FFFFFF">
-            </label>
-            <label>
                 สีข้อความ (Text Color):
-                <input type="color" id="textColor" value="#000000">
+                <input type="color" id="textColor" value="#696FC7">
             </label>
         </fieldset>
 
@@ -184,76 +156,58 @@
         </fieldset>
 
         <fieldset>
-            <legend>รูแขวน (ถ้าต้องการ)</legend>
+            <legend>ฐานสี่เหลี่ยม</legend>
             <label>
-                <input type="checkbox" id="enableHole" checked>
-                เปิดใช้งานรู
+                <input type="checkbox" id="enableBase" checked />
+                เปิดใช้งานฐาน
             </label>
             <label>
-                เส้นผ่านศูนย์กลางรู (mm):
-                <input type="number" id="holeDiameter" value="5" min="2" max="20" step="0.5">
+                ความกว้าง (Width):
+                <input type="number" id="baseWidth" value="80" min="10" max="300" step="1">
+                <span class="muted">mm</span>
             </label>
             <label>
-                ฝั่ง:
-                <select id="holeSide">
-                    <option value="left" selected>ซ้าย</option>
-                    <option value="right">ขวา</option>
-                </select>
+                ความยาว (Length):
+                <input type="number" id="baseLength" value="50" min="10" max="300" step="1">
+                <span class="muted">mm</span>
             </label>
             <label>
-                ตำแหน่ง:
-                <select id="holePosition">
-                    <option value="top">บน</option>
-                    <option value="center" selected>กลาง</option>
-                    <option value="bottom">ล่าง</option>
-                </select>
+                ความสูงฐาน (Base Height):
+                <input type="number" id="baseHeight" value="4" min="1" max="50" step="0.5">
+                <span class="muted">mm</span>
             </label>
             <label>
-                ระยะจากขอบ (mm):
-                <input type="number" id="holeOffset" value="8" min="3" max="50" step="0.5">
+                รัศมีมุมโค้ง (Corner Radius):
+                <input type="number" id="cornerRadius" value="8" min="0" max="50" step="0.5">
+                <span class="muted">mm</span>
+            </label>
+            <label>
+                สีฐาน (Base Color):
+                <input type="color" id="baseColor" value="#FFFFFF">
             </label>
         </fieldset>
 
-        <button class="btn" id="createRect">
-            <i class="fa fa-magic"></i> สร้าง Rectangle
-        </button>
-        
         <fieldset>
-            <legend>Export</legend>
-            <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                <input type="checkbox" id="mergeGeometry">
-                <span>รวม Geometry (Merge เป็นชิ้นเดียว)</span>
-            </label>
-            <div class="muted" style="margin-bottom:12px;font-size:12px;">
-                🎨 <strong>แนะนำ: ปิด Merge</strong> เพื่อ Export 3MF แบบ 2 สี (base + text แยกกัน)<br>
-                ✅ Merge: ปริ้นท์แข็งแรง แต่เป็นสีเดียว + อาจมี non-manifold edges<br>
-                ❌ No Merge: แยกชิ้น (base + text) รองรับ Multi-Color และ manifold 100%
-            </div>
-            <button class="btn secondary" id="exportSTL">
+            <legend>ส่งออก</legend>
+            <button class="btn" id="createText" style="width:100%;margin-bottom:8px;">
+                <i class="fa fa-cube"></i> สร้าง 3D
+            </button>
+            <button class="btn" id="exportSTL" style="width:100%;margin-bottom:8px;">
                 <i class="fa fa-download"></i> Export STL
             </button>
-            <button class="btn secondary" id="export3MF" style="margin-top: 8px;">
-                <i class="fa fa-cube"></i> Export 3MF (Multi-Color)
+            <button class="btn" id="export3MF" style="width:100%;">
+                <i class="fa fa-download"></i> Export 3MF
             </button>
         </fieldset>
 
-        <div id="msg" class="muted" style="margin-top:8px"></div>
+        <div id="msg" style="margin-top:16px;padding:12px;background:rgba(161,188,152,0.15);border-radius:8px;font-size:13px;"></div>
+        <div id="dim-text" style="margin-top:8px;padding:8px;background:rgba(255,255,255,0.5);border-radius:8px;font-size:12px;text-align:center;font-weight:600;"></div>
     </aside>
 
-    <main style="position:relative;">
+    <main>
         <canvas id="view"></canvas>
-        
-        <div id="viewport-controls" style="position:absolute;top:20px;right:20px;z-index:10;display:flex;gap:12px;background:rgba(255,255,255,0.95);padding:12px 16px;border-radius:16px;box-shadow:0 4px 16px rgba(105,111,199,0.15);backdrop-filter:blur(10px);">
-            <button class="btn secondary" data-view="top" title="Top" style="padding:10px 18px;font-size:14px;min-width:70px;">Top</button>
-            <button class="btn secondary" data-view="front" title="Front" style="padding:10px 18px;font-size:14px;min-width:70px;">Front</button>
-            <button class="btn secondary" data-view="side" title="Side" style="padding:10px 18px;font-size:14px;min-width:70px;">Side</button>
-        </div>
-
-        <div id="dim-text" style="position:absolute;bottom:20px;right:20px;z-index:10;background:#696FC7;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(105,111,199,0.2);">
-            --
-        </div>
     </main>
 
-    <script type="module" src="./tag-app.js"></script>
+    <script type="module" src="./tagbag-app.js"></script>
 </body>
 </html>
