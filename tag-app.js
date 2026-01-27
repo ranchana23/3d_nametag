@@ -641,20 +641,91 @@ function createTextFromOpentype(text, fontSize, extrudeDepth) {
 }
 
 // Create multiline text geometry
+// Generate UI controls for per-line font sizes
+function updateLineFontSizeUI() {
+    const tagName = document.querySelector('#tagName').value;
+    const lines = tagName.split('\n');
+    const container = document.getElementById('lineFontSizeInputs');
+    const wrapper = document.getElementById('lineFontSizeControls');
+    
+    // Hide if only one line or empty
+    if (lines.length <= 1 || !tagName.trim()) {
+        wrapper.style.display = 'none';
+        return;
+    }
+    
+    wrapper.style.display = 'block';
+    container.innerHTML = '';
+    
+    const defaultFontSize = parseFloat(document.querySelector('#fontSize').value) || 5;
+    
+    lines.forEach((line, index) => {
+        if (!line.trim()) return; // Skip empty lines but keep index
+        
+        const lineDiv = document.createElement('div');
+        lineDiv.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+        
+        const label = document.createElement('label');
+        label.style.cssText = 'flex:1;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        label.textContent = `บรรทัด ${index + 1}: ${line.substring(0, 20)}${line.length > 20 ? '...' : ''}`;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `lineSize${index}`;
+        input.className = 'line-font-size';
+        input.min = '1';
+        input.max = '20';
+        input.step = '0.5';
+        input.value = defaultFontSize;
+        input.style.cssText = 'width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;';
+        
+        // Update on change
+        input.addEventListener('input', () => {
+            if (currentMesh) createRectangle();
+        });
+        
+        lineDiv.appendChild(label);
+        lineDiv.appendChild(input);
+        container.appendChild(lineDiv);
+    });
+}
+
 function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpentype) {
     const group = new THREE.Group();
     let maxWidth = 0;
-    const lineHeight = fontSize * lineSpacing;
-    const totalHeight = lines.length * lineHeight;
+    let totalHeight = 0;
+    let currentY = 0;
+    
+    // Get per-line font sizes if available
+    const lineFontSizes = [];
+    lines.forEach((line, index) => {
+        const lineInput = document.getElementById(`lineSize${index}`);
+        const lineSize = lineInput ? parseFloat(lineInput.value) || fontSize : fontSize;
+        lineFontSizes.push(lineSize);
+    });
+    
+    // Calculate total height first
+    lines.forEach((line, index) => {
+        if (line.trim()) {
+            const lineSize = lineFontSizes[index];
+            totalHeight += lineSize * lineSpacing;
+        }
+    });
+    
+    // Start from top
+    currentY = totalHeight / 2;
     
     lines.forEach((line, index) => {
         if (!line.trim()) return; // Skip empty lines
+        
+        const lineSize = lineFontSizes[index];
+        const lineHeight = lineSize * lineSpacing;
         
         let lineGeometry = null;
         let lineWidth = 0;
         
         if (useOpentype && opentypeFont) {
-            const result = createTextFromOpentype(line, fontSize, extrudeDepth);
+            const result = createTextFromOpentype(line, lineSize, extrudeDepth);
             if (result) {
                 lineGeometry = result.geometry;
                 lineWidth = result.textWidth;
@@ -662,7 +733,7 @@ function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpen
         } else if (loadedFont) {
             lineGeometry = new TextGeometry(line, {
                 font: loadedFont,
-                size: fontSize,
+                size: lineSize,
                 height: extrudeDepth,
                 curveSegments: 12,
                 bevelEnabled: false
@@ -676,11 +747,14 @@ function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpen
             const lineMesh = new THREE.Mesh(lineGeometry);
             
             // Position each line (centered horizontally, stacked vertically)
-            const yPos = (totalHeight / 2) - (index * lineHeight) - lineHeight / 2;
+            const yPos = currentY - lineHeight / 2;
             lineMesh.position.set(-lineWidth / 2, yPos, 0);
             
             group.add(lineMesh);
             maxWidth = Math.max(maxWidth, lineWidth);
+            
+            // Move down for next line
+            currentY -= lineHeight;
         }
     });
     
@@ -908,6 +982,18 @@ document.querySelectorAll('input').forEach(input => {
     }
 });
 
+// Update line font size UI when text changes
+document.querySelector('#tagName').addEventListener('input', () => {
+    updateLineFontSizeUI();
+    if (currentMesh) createRectangle();
+});
+
+// Update line font size UI when default font size changes
+document.querySelector('#fontSize').addEventListener('input', () => {
+    updateLineFontSizeUI();
+    if (currentMesh) createRectangle();
+});
+
 // Auto-update on select (dropdown) change
 document.querySelectorAll('select').forEach(select => {
     select.addEventListener('change', () => {
@@ -940,3 +1026,6 @@ createRectangle();
 
 // Populate font dropdown
 populateFontDropdown();
+
+// Initialize line font size UI
+updateLineFontSizeUI();
