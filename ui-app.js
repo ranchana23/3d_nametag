@@ -682,11 +682,14 @@ async function loadFontFromPath(fontPath) {
         return false;
     }
 }
-// รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning
+// รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning + รองรับหลายบรรทัด
 function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit) {
     const path = new opentype.Path();
     if (!text || !font) return path;
 
+    // แยกบรรทัด
+    const lines = text.split('\n');
+    
     // letterSpacing ใน "หน่วย path" (font space หลังคูณ fontSize/unitsPerEm)
     // เราทำให้ spacingMM (mm) -> font units โดย spacingFU = mm / mmPerUnit
     // แต่เพราะ getPath ใช้หน่วย path (font units * fontSize/unitsPerEm),
@@ -694,61 +697,77 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
     const spacingFU = letterSpacingMM / mmPerUnit; // font units
     const scale = fontSize / font.unitsPerEm;      // font units -> path units
     const spacingPath = spacingFU * scale;         // path units
-
-    let glyphs;
-    try {
-        // ปิด OpenType features ที่อาจทำให้เกิด error
-        glyphs = font.stringToGlyphs(text, { features: {} });
-    } catch (e) {
-        console.warn('⚠️ ฟอนต์มี features ที่ไม่รองรับ, ใช้โหมดพื้นฐาน:', e.message);
-        // fallback: แปลงเป็น glyphs แบบไม่ใช้ features
-        try {
-            glyphs = [];
-            for (let i = 0; i < text.length; i++) {
-                const glyph = font.charToGlyph(text.charAt(i));
-                if (glyph) glyphs.push(glyph);
-            }
-        } catch (e2) {
-            console.error('❌ ไม่สามารถแปลงข้อความเป็น glyphs:', e2);
-            return path;
-        }
-    }
     
-    let x = 0;
-    const y = 0;
+    // คำนวณ line height (1.2x ของ fontSize ตามหน่วย path units)
+    const lineHeight = fontSize * 1.2;
+    
+    let currentY = 0;
 
-    for (let i = 0; i < glyphs.length; i++) {
-        const g = glyphs[i];
-
-        // เพิ่ม path ของ glyph นี้
-        try {
-            const gp = g.getPath(x, y, fontSize);
-            gp.commands.forEach(cmd => path.commands.push(cmd));
-        } catch (e) {
-            console.warn(`⚠️ ไม่สามารถสร้าง path สำหรับตัวอักษร "${text.charAt(i)}":`, e.message);
-            // ข้ามตัวอักษรที่มีปัญหา
+    // วนลูปแต่ละบรรทัด
+    lines.forEach((lineText, lineIndex) => {
+        if (!lineText.trim()) {
+            // บรรทัดว่าง ให้เว้นบรรทัด
+            currentY += lineHeight;
+            return;
         }
 
-        // ระยะขยับสำหรับ glyph ถัดไป = advance + kerning + letterSpacing
-        let advance = (g.advanceWidth || 0) * scale;
-
-        // kerning (ใน font units) -> path units
-        if (i < glyphs.length - 1) {
-            const next = glyphs[i + 1];
+        let glyphs;
+        try {
+            // ปิด OpenType features ที่อาจทำให้เกิด error
+            glyphs = font.stringToGlyphs(lineText, { features: {} });
+        } catch (e) {
+            console.warn('⚠️ ฟอนต์มี features ที่ไม่รองรับ, ใช้โหมดพื้นฐาน:', e.message);
+            // fallback: แปลงเป็น glyphs แบบไม่ใช้ features
             try {
-                const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0; // font units
-                const kernPath = kernFU * scale;
-                advance += kernPath;
-            } catch (e) {
-                // ถ้า kerning มีปัญหา ก็ข้าม
+                glyphs = [];
+                for (let i = 0; i < lineText.length; i++) {
+                    const glyph = font.charToGlyph(lineText.charAt(i));
+                    if (glyph) glyphs.push(glyph);
+                }
+            } catch (e2) {
+                console.error('❌ ไม่สามารถแปลงข้อความเป็น glyphs:', e2);
+                return;
             }
         }
+        
+        let x = 0;
 
-        // เพิ่ม letter spacing (path units)
-        advance += spacingPath;
+        for (let i = 0; i < glyphs.length; i++) {
+            const g = glyphs[i];
 
-        x += advance;
-    }
+            // เพิ่ม path ของ glyph นี้
+            try {
+                const gp = g.getPath(x, currentY, fontSize);
+                gp.commands.forEach(cmd => path.commands.push(cmd));
+            } catch (e) {
+                console.warn(`⚠️ ไม่สามารถสร้าง path สำหรับตัวอักษร "${lineText.charAt(i)}":`, e.message);
+                // ข้ามตัวอักษรที่มีปัญหา
+            }
+
+            // ระยะขยับสำหรับ glyph ถัดไป = advance + kerning + letterSpacing
+            let advance = (g.advanceWidth || 0) * scale;
+
+            // kerning (ใน font units) -> path units
+            if (i < glyphs.length - 1) {
+                const next = glyphs[i + 1];
+                try {
+                    const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0; // font units
+                    const kernPath = kernFU * scale;
+                    advance += kernPath;
+                } catch (e) {
+                    // ถ้า kerning มีปัญหา ก็ข้าม
+                }
+            }
+
+            // เพิ่ม letter spacing (path units)
+            advance += spacingPath;
+
+            x += advance;
+        }
+        
+        // เลื่อน Y ไปบรรทัดถัดไป
+        currentY += lineHeight;
+    });
 
     return path;
 }
