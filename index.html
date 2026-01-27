@@ -159,6 +159,14 @@
             <label>ระยะห่างระหว่างบรรทัด (Line Spacing)</label>
             <input id="lineSpacing" type="number" value="1.2" min="0.5" max="3" step="0.1" />
             <div class="muted">เท่าของขนาดฟอนต์ (ค่าเริ่มต้น 1.2x)</div>
+            
+            <!-- Dynamic line font size controls -->
+            <div id="lineFontSizeControls" style="margin-top: 12px; padding: 12px; background: rgba(161,188,152,0.08); border-radius: 8px; border: 1px solid var(--line); display: none;">
+                <label style="font-weight: 700; display: block; margin-bottom: 8px;">ขนาดฟอนต์แต่ละบรรทัด</label>
+                <div id="lineFontSizeInputs"></div>
+                <span class="muted" style="font-size: 12px; display: block; margin-top: 8px;">💡 ปรับขนาดฟอนต์แยกสำหรับแต่ละบรรทัด (ตั้งค่าใน totalHeight จะถูกยกเลิก)</span>
+            </div>
+            
             <label>การจัดตำแหน่งข้อความ (Text Alignment)</label>
             <select id="textAlign">
                 <option value="left">ชิดซ้าย (Left)</option>

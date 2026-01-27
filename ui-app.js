@@ -68,6 +68,24 @@ window.addEventListener('DOMContentLoaded', () => {
             panel.querySelector('h3').appendChild(toggleBtn);
         }
     }
+    
+    // เพิ่ม event listener สำหรับ textarea ของข้อความเพื่ออัปเดต line font size UI
+    const textInput = document.getElementById('text');
+    if (textInput) {
+        textInput.addEventListener('input', () => {
+            updateLineFontSizeUI();
+        });
+        // Initialize UI
+        updateLineFontSizeUI();
+    }
+    
+    // เพิ่ม event listener สำหรับ totalHeight เพื่ออัปเดต default ของแต่ละบรรทัด
+    const totalHeightInput = document.getElementById('totalHeight');
+    if (totalHeightInput) {
+        totalHeightInput.addEventListener('input', () => {
+            updateLineFontSizeUI();
+        });
+    }
 });
 // ui-app.js — preview + STL export one-piece
 import * as THREE from 'https://esm.sh/three@0.168.0';
@@ -684,8 +702,56 @@ async function loadFontFromPath(fontPath) {
         return false;
     }
 }
-// รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning + รองรับหลายบรรทัด + text alignment
-function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit, lineSpacingMultiplier = 1.2, textAlign = 'center') {
+// สร้าง UI สำหรับปรับขนาดฟอนต์แต่ละบรรทัด
+function updateLineFontSizeUI() {
+    const text = document.getElementById('text')?.value || '';
+    const lines = text.split('\n');
+    const container = document.getElementById('lineFontSizeInputs');
+    const controlsDiv = document.getElementById('lineFontSizeControls');
+    
+    if (!container || !controlsDiv) return;
+    
+    // ถ้ามีมากกว่า 1 บรรทัด ให้แสดง controls
+    if (lines.length > 1) {
+        controlsDiv.style.display = 'block';
+        container.innerHTML = '';
+        
+        const defaultFontSize = parseFloat(document.getElementById('totalHeight')?.value) || 13;
+        
+        lines.forEach((line, index) => {
+            const lineDiv = document.createElement('div');
+            lineDiv.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+            
+            const label = document.createElement('label');
+            label.textContent = `บรรทัด ${index + 1}:`;
+            label.style.cssText = 'min-width:70px;font-size:13px;';
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = `lineHeight${index}`;
+            input.className = 'line-font-size';
+            input.min = '1';
+            input.max = '50';
+            input.step = '0.5';
+            input.value = defaultFontSize;
+            input.style.cssText = 'width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;';
+            
+            const preview = document.createElement('span');
+            preview.textContent = line.substring(0, 20) + (line.length > 20 ? '...' : '');
+            preview.style.cssText = 'flex:1;font-size:12px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            
+            lineDiv.appendChild(label);
+            lineDiv.appendChild(input);
+            lineDiv.appendChild(preview);
+            container.appendChild(lineDiv);
+        });
+    } else {
+        controlsDiv.style.display = 'none';
+    }
+}
+
+// รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning + รองรับหลายบรรทัด + text alignment + per-line font sizes
+function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit, lineSpacingMultiplier = 1.2, textAlign = 'center', lineFontSizes = null) {
     const path = new opentype.Path();
     if (!text || !font) return path;
 
@@ -705,31 +771,39 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
     
     // คำนวณความกว้างของแต่ละบรรทัดก่อน (สำหรับ alignment)
     const lineWidths = [];
+    const lineHeights = [];
     let maxWidth = 0;
     
-    lines.forEach((lineText) => {
+    lines.forEach((lineText, lineIndex) => {
         if (!lineText.trim()) {
             lineWidths.push(0);
+            lineHeights.push(fontSize * lineSpacingMultiplier);
             return;
         }
+        
+        // ใช้ font size ของบรรทัดนี้ (ถ้ามี) หรือใช้ default
+        const lineFontSize = lineFontSizes && lineFontSizes[lineIndex] ? lineFontSizes[lineIndex] : fontSize;
+        const lineScale = lineFontSize / font.unitsPerEm;
+        const lineSpacingPathLocal = spacingFU * lineScale;
         
         let lineWidth = 0;
         try {
             const glyphs = font.stringToGlyphs(lineText, { features: {} });
             glyphs.forEach((g, i) => {
-                lineWidth += (g.advanceWidth || 0) * scale;
+                lineWidth += (g.advanceWidth || 0) * lineScale;
                 if (i < glyphs.length - 1) {
                     try {
                         const next = glyphs[i + 1];
                         const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0;
-                        lineWidth += kernFU * scale;
+                        lineWidth += kernFU * lineScale;
                     } catch (e) {}
                 }
-                lineWidth += spacingPath;
+                lineWidth += lineSpacingPathLocal;
             });
         } catch (e) {}
         
         lineWidths.push(lineWidth);
+        lineHeights.push(lineFontSize * lineSpacingMultiplier);
         if (lineWidth > maxWidth) maxWidth = lineWidth;
     });
     
@@ -739,9 +813,14 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
     lines.forEach((lineText, lineIndex) => {
         if (!lineText.trim()) {
             // บรรทัดว่าง ให้เว้นบรรทัด
-            currentY += lineHeight;
+            currentY += lineHeights[lineIndex];
             return;
         }
+        
+        // ใช้ font size ของบรรทัดนี้
+        const lineFontSize = lineFontSizes && lineFontSizes[lineIndex] ? lineFontSizes[lineIndex] : fontSize;
+        const lineScale = lineFontSize / font.unitsPerEm;
+        const lineSpacingPathLocal = spacingFU * lineScale;
         
         // คำนวณ X offset สำหรับ alignment
         let startX = 0;
@@ -780,7 +859,7 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
 
             // เพิ่ม path ของ glyph นี้
             try {
-                const gp = g.getPath(x, currentY, fontSize);
+                const gp = g.getPath(x, currentY, lineFontSize);
                 gp.commands.forEach(cmd => path.commands.push(cmd));
             } catch (e) {
                 console.warn(`⚠️ ไม่สามารถสร้าง path สำหรับตัวอักษร "${lineText.charAt(i)}":`, e.message);
@@ -788,14 +867,14 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
             }
 
             // ระยะขยับสำหรับ glyph ถัดไป = advance + kerning + letterSpacing
-            let advance = (g.advanceWidth || 0) * scale;
+            let advance = (g.advanceWidth || 0) * lineScale;
 
             // kerning (ใน font units) -> path units
             if (i < glyphs.length - 1) {
                 const next = glyphs[i + 1];
                 try {
                     const kernFU = font.getKerningValue ? font.getKerningValue(g, next) : 0; // font units
-                    const kernPath = kernFU * scale;
+                    const kernPath = kernFU * lineScale;
                     advance += kernPath;
                 } catch (e) {
                     // ถ้า kerning มีปัญหา ก็ข้าม
@@ -803,13 +882,13 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
             }
 
             // เพิ่ม letter spacing (path units)
-            advance += spacingPath;
+            advance += lineSpacingPathLocal;
 
             x += advance;
         }
         
         // เลื่อน Y ไปบรรทัดถัดไป
-        currentY += lineHeight;
+        currentY += lineHeights[lineIndex];
     });
 
     return path;
@@ -896,8 +975,32 @@ async function buildGeometries() {
         return s;
     }
 
-    // ใช้ path แบบมี letter spacing และ alignment
-    const otPath = buildTextPathWithSpacing(font, c.text, fontSize, c.letterSpacing, c.mmPerUnit, c.lineSpacing, c.textAlign);
+    // รวบรวม line font sizes (ถ้ามี)
+    const lines = c.text.split('\n');
+    const lineFontSizes = [];
+    let hasCustomLineSizes = false;
+    
+    lines.forEach((line, index) => {
+        const lineHeightInput = document.getElementById(`lineHeight${index}`);
+        if (lineHeightInput) {
+            lineFontSizes.push(parseFloat(lineHeightInput.value) || fontSize);
+            hasCustomLineSizes = true;
+        } else {
+            lineFontSizes.push(fontSize);
+        }
+    });
+    
+    // ใช้ path แบบมี letter spacing, alignment และ per-line font sizes
+    const otPath = buildTextPathWithSpacing(
+        font, 
+        c.text, 
+        fontSize, 
+        c.letterSpacing, 
+        c.mmPerUnit, 
+        c.lineSpacing, 
+        c.textAlign,
+        hasCustomLineSizes ? lineFontSizes : null
+    );
     const svg = svgFromOpenType(otPath.toPathData(3));
 
     // shapes ของตัวอักษร (ยังอยู่ใน FU)
