@@ -306,6 +306,7 @@ function cfg() {
         totalWidth: parseFloat(document.querySelector('#totalWidth')?.value),
         totalHeight: parseFloat(document.querySelector('#totalHeight')?.value),
         letterSpacing: parseFloat(document.querySelector('#letterSpacing')?.value) || 0.0,
+        lineSpacing: parseFloat(document.querySelector('#lineSpacing')?.value) || 1.2,
 
         baseColor: document.querySelector('#baseColor')?.value || '#dddddd',
         textColor: document.querySelector('#textColor')?.value || '#333333',
@@ -683,7 +684,7 @@ async function loadFontFromPath(fontPath) {
     }
 }
 // รวม path ของข้อความแบบกำหนด letter-spacing (mm) + รองรับ kerning + รองรับหลายบรรทัด
-function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit) {
+function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUnit, lineSpacingMultiplier = 1.2) {
     const path = new opentype.Path();
     if (!text || !font) return path;
 
@@ -698,8 +699,8 @@ function buildTextPathWithSpacing(font, text, fontSize, letterSpacingMM, mmPerUn
     const scale = fontSize / font.unitsPerEm;      // font units -> path units
     const spacingPath = spacingFU * scale;         // path units
     
-    // คำนวณ line height (1.2x ของ fontSize ตามหน่วย path units)
-    const lineHeight = fontSize * 1.2;
+    // คำนวณ line height (lineSpacingMultiplier ของ fontSize ตามหน่วย path units)
+    const lineHeight = fontSize * lineSpacingMultiplier;
     
     let currentY = 0;
 
@@ -854,7 +855,7 @@ async function buildGeometries() {
     }
 
     // ใช้ path แบบมี letter spacing
-    const otPath = buildTextPathWithSpacing(font, c.text, fontSize, c.letterSpacing, c.mmPerUnit);
+    const otPath = buildTextPathWithSpacing(font, c.text, fontSize, c.letterSpacing, c.mmPerUnit, c.lineSpacing);
     const svg = svgFromOpenType(otPath.toPathData(3));
 
     // shapes ของตัวอักษร (ยังอยู่ใน FU)
