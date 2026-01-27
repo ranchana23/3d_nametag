@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="style-noto.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 </head>
 <body>
     <!-- Navigation Sidebar -->
@@ -69,6 +70,11 @@
                 ความสูงข้อความ (Extrude Depth):
                 <input type="number" id="textHeight" value="2" min="0.5" max="20" step="0.5">
                 <span class="muted">mm - ความสูงที่ยื่นออกมา</span>
+            </label>
+            <label>
+                ความหนาตัวอักษร (Text Thickness):
+                <input type="number" id="textThickness" value="0" min="0" max="2" step="0.1">
+                <span class="muted">mm - ความหนาของเส้นตัวอักษร (0 = ปกติ)</span>
             </label>
             <label>
                 ระยะห่างระหว่างบรรทัด (Line Spacing):
@@ -185,6 +191,65 @@
                 สีฐาน (Base Color):
                 <input type="color" id="baseColor" value="#FFFFFF">
             </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>รูแขวน (ถ้าต้องการ)</legend>
+            <label>
+                <input type="checkbox" id="enableHole" checked>
+                เปิดใช้งานรู
+            </label>
+            <label>
+                เส้นผ่านศูนย์กลางรู (mm):
+                <input type="number" id="holeDiameter" value="4" min="2" max="20" step="0.5">
+            </label>
+            <label>
+                ฝั่ง:
+                <select id="holeSide">
+                    <option value="left" selected>ซ้าย</option>
+                    <option value="right">ขวา</option>
+                </select>
+            </label>
+            <label>
+                ตำแหน่ง:
+                <select id="holePosition">
+                    <option value="top">บน</option>
+                    <option value="center" selected>กลาง</option>
+                    <option value="bottom">ล่าง</option>
+                </select>
+            </label>
+            <label>
+                ระยะจากขอบ (mm):
+                <input type="number" id="holeOffset" value="8" min="3" max="50" step="0.5">
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>เพิ่มรูปภาพ (PNG)</legend>
+            <label>
+                อัปโหลดรูปภาพ PNG:
+                <input type="file" id="imageUpload" accept="image/png,image/jpg,image/jpeg" />
+            </label>
+            <label>
+                ความสูง Extrude (mm):
+                <input type="number" id="imageExtrudeDepth" value="2" min="0.5" max="20" step="0.5">
+            </label>
+            <label>
+                ขนาดภาพ (mm):
+                <input type="number" id="imageSize" value="30" min="5" max="200" step="1">
+                <span class="muted">ความกว้างสูงสุด</span>
+            </label>
+            <label>
+                ตำแหน่ง X (mm):
+                <input type="number" id="imageOffsetX" value="0" step="0.5">
+            </label>
+            <label>
+                ตำแหน่ง Y (mm):
+                <input type="number" id="imageOffsetY" value="0" step="0.5">
+            </label>
+            <button class="btn secondary" id="removeImage" style="width:100%;">
+                <i class="fa fa-trash"></i> ลบรูปภาพ
+            </button>
         </fieldset>
 
         <fieldset>

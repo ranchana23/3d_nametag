@@ -73,6 +73,8 @@ scene.add(grid);
 // Current meshes
 let textMesh = null;
 let baseMesh = null;
+let imageMesh = null;
+let uploadedImageFile = null;
 
 // Create rounded rectangle shape
 function createRoundedRectShape(width, length, radius) {
@@ -111,8 +113,55 @@ function isPointInPolygon(point, polygon) {
     return inside;
 }
 
+// Offset a path to make it thicker
+function offsetPath(path, offset) {
+    if (offset <= 0) return path;
+    
+    const offsetPaths = [];
+    const steps = 8; // Number of offset steps for smooth thickness
+    
+    for (let i = 0; i <= steps; i++) {
+        const currentOffset = (offset / steps) * i;
+        const newPath = new THREE.Shape();
+        
+        path.curves.forEach((curve, idx) => {
+            if (curve instanceof THREE.LineCurve) {
+                const p1 = curve.v1;
+                const p2 = curve.v2;
+                
+                // Calculate perpendicular direction
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / len * currentOffset;
+                const ny = dx / len * currentOffset;
+                
+                if (idx === 0) {
+                    newPath.moveTo(p1.x + nx, p1.y + ny);
+                }
+                newPath.lineTo(p2.x + nx, p2.y + ny);
+            } else if (curve instanceof THREE.CubicBezierCurve) {
+                // For bezier curves, offset control points
+                const v0 = curve.v0;
+                const v1 = curve.v1;
+                const v2 = curve.v2;
+                const v3 = curve.v3;
+                
+                if (idx === 0) {
+                    newPath.moveTo(v0.x, v0.y);
+                }
+                newPath.bezierCurveTo(v1.x, v1.y, v2.x, v2.y, v3.x, v3.y);
+            }
+        });
+        
+        offsetPaths.push(newPath);
+    }
+    
+    return offsetPaths[offsetPaths.length - 1]; // Return the most offset path
+}
+
 // Create text geometry from opentype.js font
-function createTextFromOpentype(text, fontSize, extrudeDepth) {
+function createTextFromOpentype(text, fontSize, extrudeDepth, thickness = 0) {
     if (!opentypeFont) return null;
 
     const allShapes = [];
@@ -166,6 +215,11 @@ function createTextFromOpentype(text, fontSize, extrudeDepth) {
 
             if (currentPath && currentPath.curves.length > 0) {
                 glyphPaths.push(currentPath);
+            }
+
+            // Apply thickness if specified (only to outline paths, not holes)
+            if (thickness > 0) {
+                glyphPaths = glyphPaths.map(path => offsetPath(path, thickness));
             }
 
             // Process paths to determine which are holes using winding order
@@ -314,7 +368,7 @@ function updateLineFontSizeUI() {
 }
 
 // Create multiline text geometry
-function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpentype) {
+function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpentype, textThickness = 0) {
     const group = new THREE.Group();
     let maxWidth = 0;
     let totalHeight = 0;
@@ -349,7 +403,7 @@ function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpen
         let lineWidth = 0;
         
         if (useOpentype && opentypeFont) {
-            const result = createTextFromOpentype(line, lineSize, extrudeDepth);
+            const result = createTextFromOpentype(line, lineSize, extrudeDepth, textThickness);
             if (result) {
                 lineGeometry = result.geometry;
                 lineWidth = result.textWidth;
@@ -386,7 +440,7 @@ function createMultilineText(lines, fontSize, lineSpacing, extrudeDepth, useOpen
 }
 
 // Create text mesh
-function createText() {
+async function createText() {
     // Don't create text if font is not loaded yet
     if (!loadedFont && !opentypeFont) {
         MSG.textContent = '⏳ รอโหลดฟอนต์...';
@@ -396,6 +450,7 @@ function createText() {
     const tagName = document.querySelector('#tagName').value.trim();
     const fontSize = parseFloat(document.querySelector('#fontSize').value) || 5;
     const textHeight = parseFloat(document.querySelector('#textHeight').value) || 4;
+    const textThickness = parseFloat(document.querySelector('#textThickness').value) || 0;
     const lineSpacing = parseFloat(document.querySelector('#lineSpacing').value) || 1.2;
     const textColor = document.querySelector('#textColor').value || '#696FC7';
     
@@ -435,7 +490,41 @@ function createText() {
 
         // Create base if enabled
         if (enableBase) {
+            const enableHole = document.querySelector('#enableHole')?.checked ?? true;
+            const holeDiameter = parseFloat(document.querySelector('#holeDiameter')?.value) || 4;
+            const holeOffset = parseFloat(document.querySelector('#holeOffset')?.value) || 8;
+            const holeSide = document.querySelector('#holeSide')?.value || 'left';
+            const holePosition = document.querySelector('#holePosition')?.value || 'center';
+            
             const shape = createRoundedRectShape(baseWidth, baseLength, cornerRadius);
+            
+            // Add hole if enabled
+            if (enableHole) {
+                const holeRadius = holeDiameter / 2;
+                
+                // Calculate X position based on side (left/right)
+                let holeX;
+                if (holeSide === 'left') {
+                    holeX = -baseWidth / 2 + holeOffset;
+                } else { // right
+                    holeX = baseWidth / 2 - holeOffset;
+                }
+                
+                // Calculate Y position based on position (top/center/bottom)
+                let holeY;
+                if (holePosition === 'top') {
+                    holeY = baseLength / 2 - holeOffset;
+                } else if (holePosition === 'center') {
+                    holeY = 0; // center of the shape
+                } else { // bottom
+                    holeY = -baseLength / 2 + holeOffset;
+                }
+                
+                const holePath = new THREE.Path();
+                holePath.absarc(holeX, holeY, holeRadius, 0, Math.PI * 2, true);
+                shape.holes.push(holePath);
+            }
+            
             const extrudeSettings = {
                 depth: baseHeight,
                 bevelEnabled: false,
@@ -471,7 +560,7 @@ function createText() {
         const lines = tagName.split('\n');
         const useOpentype = !!opentypeFont;
         
-        const result = createMultilineText(lines, fontSize, lineSpacing, textHeight, useOpentype);
+        const result = createMultilineText(lines, fontSize, lineSpacing, textHeight, useOpentype, textThickness);
         
         if (result.group.children.length > 0) {
             // Create text material with user-selected color
@@ -514,10 +603,187 @@ function createText() {
             MSG.textContent = '⚠️ ไม่สามารถสร้างข้อความได้';
             DIM_TEXT.textContent = '';
         }
+        
+        // Add image if uploaded
+        if (imageMesh) {
+            scene.remove(imageMesh);
+            if (imageMesh.geometry) imageMesh.geometry.dispose();
+            if (imageMesh.material) imageMesh.material.dispose();
+            imageMesh = null;
+        }
+        
+        if (uploadedImageFile) {
+            const newImageMesh = await createImageMesh();
+            if (newImageMesh) {
+                // Position image on base
+                const imageOffsetX = parseFloat(document.getElementById('imageOffsetX').value) || 0;
+                const imageOffsetY = parseFloat(document.getElementById('imageOffsetY').value) || 0;
+                const zPos = enableBase ? baseHeight : 0;
+                newImageMesh.position.set(imageOffsetX, imageOffsetY, zPos);
+                
+                applyRotation(newImageMesh);
+                imageMesh = newImageMesh;
+                scene.add(imageMesh);
+            }
+        }
     } catch (e) {
         console.error(e);
         MSG.textContent = '❌ เกิดข้อผิดพลาด: ' + e.message;
         DIM_TEXT.textContent = '';
+    }
+}
+
+// Process image and create extruded geometry
+async function processImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                try {
+                    // Create a canvas to flip the image vertically
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Flip vertically
+                    ctx.translate(0, canvas.height);
+                    ctx.scale(1, -1);
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Get image data
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Convert to SVG using ImageTracer
+                    const svgStr = ImageTracer.imagedataToSVG(imageData, {
+                        ltres: 1,
+                        qtres: 1,
+                        pathomit: 1,
+                        numberofcolors: 2,
+                        mincolorratio: 0.02,
+                        colorquantcycles: 3
+                    });
+                    
+                    // Parse SVG to extract paths
+                    const parser = new DOMParser();
+                    const svgDoc = parser.parseFromString(svgStr, 'image/svg+xml');
+                    const paths = svgDoc.querySelectorAll('path');
+                    
+                    if (paths.length === 0) {
+                        reject(new Error('ไม่พบเส้นทางในภาพ'));
+                        return;
+                    }
+                    
+                    // Get image size parameter
+                    const imageSize = parseFloat(document.getElementById('imageSize').value) || 30;
+                    const scale = imageSize / Math.max(img.width, img.height);
+                    
+                    // Process all paths
+                    const shapes = [];
+                    paths.forEach(pathEl => {
+                        const d = pathEl.getAttribute('d');
+                        if (!d) return;
+                        
+                        const shape = new THREE.Shape();
+                        const commands = d.match(/[MLCZmlcz][^MLCZmlcz]*/g);
+                        if (!commands) return;
+                        
+                        let currentX = 0, currentY = 0;
+                        
+                        commands.forEach(cmd => {
+                            const type = cmd[0];
+                            const coords = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
+                            
+                            switch(type) {
+                                case 'M':
+                                    currentX = coords[0] * scale;
+                                    currentY = coords[1] * scale;
+                                    shape.moveTo(currentX, currentY);
+                                    break;
+                                case 'L':
+                                    currentX = coords[0] * scale;
+                                    currentY = coords[1] * scale;
+                                    shape.lineTo(currentX, currentY);
+                                    break;
+                                case 'C':
+                                    shape.bezierCurveTo(
+                                        coords[0] * scale, coords[1] * scale,
+                                        coords[2] * scale, coords[3] * scale,
+                                        coords[4] * scale, coords[5] * scale
+                                    );
+                                    currentX = coords[4] * scale;
+                                    currentY = coords[5] * scale;
+                                    break;
+                                case 'Z':
+                                case 'z':
+                                    shape.closePath();
+                                    break;
+                            }
+                        });
+                        
+                        shapes.push(shape);
+                    });
+                    
+                    resolve(shapes);
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = () => reject(new Error('โหลดภาพไม่สำเร็จ'));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+        reader.readAsDataURL(file);
+    });
+}
+
+// Create image mesh from uploaded file
+async function createImageMesh() {
+    if (!uploadedImageFile) return null;
+    
+    try {
+        const shapes = await processImage(uploadedImageFile);
+        if (shapes.length === 0) return null;
+        
+        const imageExtrudeDepth = parseFloat(document.getElementById('imageExtrudeDepth').value) || 2;
+        const geometries = [];
+        
+        shapes.forEach(shape => {
+            const geometry = new THREE.ExtrudeGeometry(shape, {
+                depth: imageExtrudeDepth,
+                bevelEnabled: false
+            });
+            geometries.push(geometry);
+        });
+        
+        // Merge all shape geometries
+        const mergedGeo = mergeGeometries(geometries, false);
+        
+        // Center the geometry
+        mergedGeo.computeBoundingBox();
+        const bbox = mergedGeo.boundingBox;
+        const centerX = (bbox.max.x + bbox.min.x) / 2;
+        const centerY = (bbox.max.y + bbox.min.y) / 2;
+        mergedGeo.translate(-centerX, -centerY, 0);
+        
+        // Create mesh
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            metalness: 0.1,
+            roughness: 0.5
+        });
+        
+        const mesh = new THREE.Mesh(mergedGeo, material);
+        mesh.name = 'image';
+        
+        return mesh;
+        
+    } catch (error) {
+        console.error('Error creating image mesh:', error);
+        MSG.textContent = '❌ ประมวลผลภาพไม่สำเร็จ: ' + error.message;
+        return null;
     }
 }
 
@@ -537,7 +803,7 @@ function applyRotation(mesh = null) {
         mesh.rotation.y = rotationY;
         mesh.rotation.z = rotationZ;
     } else {
-        // Apply to both base and text if no specific mesh provided
+        // Apply to base, text, and image if no specific mesh provided
         if (baseMesh) {
             baseMesh.rotation.x = rotationX;
             baseMesh.rotation.y = rotationY;
@@ -547,6 +813,11 @@ function applyRotation(mesh = null) {
             textMesh.rotation.x = rotationX;
             textMesh.rotation.y = rotationY;
             textMesh.rotation.z = rotationZ;
+        }
+        if (imageMesh) {
+            imageMesh.rotation.x = rotationX;
+            imageMesh.rotation.y = rotationY;
+            imageMesh.rotation.z = rotationZ;
         }
     }
 }
@@ -583,6 +854,14 @@ function createMergedMesh() {
         });
     }
     
+    // Clone and collect image geometry
+    if (imageMesh) {
+        const imageGeo = imageMesh.geometry.clone();
+        imageMesh.updateWorldMatrix(true, false);
+        imageGeo.applyMatrix4(imageMesh.matrixWorld);
+        geometries.push(imageGeo);
+    }
+    
     if (geometries.length === 0) return null;
     
     // Merge all geometries into one
@@ -611,7 +890,7 @@ function createMergedMesh() {
 
 // Export STL
 function exportSTL() {
-    if (!textMesh && !baseMesh) {
+    if (!textMesh && !baseMesh && !imageMesh) {
         MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
         return;
     }
@@ -647,7 +926,7 @@ function exportSTL() {
 
 // Export 3MF
 function export3MF() {
-    if (!textMesh && !baseMesh) {
+    if (!textMesh && !baseMesh && !imageMesh) {
         MSG.textContent = '❌ ยังไม่มีโมเดลให้ส่งออก';
         return;
     }
@@ -885,10 +1164,48 @@ document.querySelector('#fontSize')?.addEventListener('input', () => {
 });
 
 // Auto-update on other input changes
-['textHeight', 'lineSpacing', 'textColor', 'offsetX', 'offsetY', 
- 'enableBase', 'baseWidth', 'baseLength', 'baseHeight', 'cornerRadius', 'baseColor'].forEach(id => {
+['textHeight', 'textThickness', 'lineSpacing', 'textColor', 'offsetX', 'offsetY', 
+ 'enableBase', 'baseWidth', 'baseLength', 'baseHeight', 'cornerRadius', 'baseColor',
+ 'enableHole', 'holeDiameter', 'holeOffset', 'holeSide', 'holePosition',
+ 'imageExtrudeDepth', 'imageSize', 'imageOffsetX', 'imageOffsetY'].forEach(id => {
     document.querySelector(`#${id}`)?.addEventListener('input', createText);
     document.querySelector(`#${id}`)?.addEventListener('change', createText);
+});
+
+// Image upload handler
+document.getElementById('imageUpload')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        MSG.textContent = '❌ กรุณาเลือกไฟล์ภาพ';
+        return;
+    }
+    
+    uploadedImageFile = file;
+    MSG.textContent = '⏳ กำลังประมวลผลภาพ...';
+    await createText();
+    MSG.textContent = '✅ เพิ่มภาพสำเร็จ';
+});
+
+// Remove image handler
+document.getElementById('removeImage')?.addEventListener('click', () => {
+    uploadedImageFile = null;
+    
+    if (imageMesh) {
+        scene.remove(imageMesh);
+        if (imageMesh.geometry) imageMesh.geometry.dispose();
+        if (imageMesh.material) imageMesh.material.dispose();
+        imageMesh = null;
+    }
+    
+    // Reset file input
+    const fileInput = document.getElementById('imageUpload');
+    if (fileInput) fileInput.value = '';
+    
+    MSG.textContent = '🗑️ ลบภาพแล้ว';
+    createText();
 });
 
 // Animation loop
