@@ -86,7 +86,229 @@ window.addEventListener('DOMContentLoaded', () => {
             updateLineFontSizeUI();
         });
     }
+    
+    // ==================== PRESET MANAGEMENT ====================
+    initPresetSystem();
 });
+
+// ==================== PRESET FUNCTIONS ====================
+function initPresetSystem() {
+    loadPresetList();
+    
+    // Save Preset
+    document.getElementById('savePreset')?.addEventListener('click', () => {
+        const name = document.getElementById('presetName')?.value.trim();
+        if (!name) {
+            alert('กรุณาใส่ชื่อ Preset');
+            return;
+        }
+        
+        const preset = getCurrentSettings();
+        savePreset(name, preset);
+        loadPresetList();
+        document.getElementById('presetName').value = '';
+        alert(`บันทึก Preset "${name}" สำเร็จ`);
+    });
+    
+    // Load Preset
+    document.getElementById('loadPreset')?.addEventListener('click', () => {
+        const name = document.getElementById('presetSelect')?.value;
+        if (!name) {
+            alert('กรุณาเลือก Preset');
+            return;
+        }
+        
+        const preset = loadPreset(name);
+        if (preset) {
+            applySettings(preset);
+            alert(`โหลด Preset "${name}" สำเร็จ`);
+        }
+    });
+    
+    // Delete Preset
+    document.getElementById('deletePreset')?.addEventListener('click', () => {
+        const name = document.getElementById('presetSelect')?.value;
+        if (!name) {
+            alert('กรุณาเลือก Preset');
+            return;
+        }
+        
+        if (confirm(`ต้องการลบ Preset "${name}" หรือไม่?`)) {
+            deletePreset(name);
+            loadPresetList();
+            alert(`ลบ Preset "${name}" สำเร็จ`);
+        }
+    });
+    
+    // Auto-load on select change
+    document.getElementById('presetSelect')?.addEventListener('change', (e) => {
+        const name = e.target.value;
+        if (name) {
+            document.getElementById('presetName').value = name;
+        }
+    });
+}
+
+function getCurrentSettings() {
+    // รวบรวมขนาดฟอนต์แต่ละบรรทัด
+    const text = document.getElementById('text')?.value || '';
+    const lines = text.split('\n');
+    const lineFontSizes = {};
+    
+    if (lines.length > 1) {
+        lines.forEach((line, index) => {
+            const lineHeightInput = document.getElementById(`lineHeight${index}`);
+            if (lineHeightInput && lineHeightInput.value) {
+                lineFontSizes[index] = parseFloat(lineHeightInput.value);
+            }
+        });
+    }
+    
+    return {
+        // Text & Font (ไม่เก็บ text เพื่อให้แก้ไขได้)
+        // text: ไม่เก็บเพื่อให้ผู้ใช้สามารถพิมพ์ชื่อใหม่ได้
+        usePersonalFonts: document.getElementById('usePersonalFonts')?.checked || false,
+        
+        // Style
+        style: document.getElementById('style')?.value || 'raised',
+        
+        // Size
+        letterHeight: parseFloat(document.getElementById('letterHeight')?.value) || 1.0,
+        baseHeight: parseFloat(document.getElementById('baseHeight')?.value) || 2.0,
+        outline: parseFloat(document.getElementById('outline')?.value) || 4.0,
+        mmPerUnit: parseFloat(document.getElementById('mmPerUnit')?.value) || 0.25,
+        totalWidth: parseFloat(document.getElementById('totalWidth')?.value) || null,
+        totalHeight: parseFloat(document.getElementById('totalHeight')?.value) || 13,
+        letterSpacing: parseFloat(document.getElementById('letterSpacing')?.value) || 0,
+        textStroke: parseFloat(document.getElementById('textStroke')?.value) || 0,
+        lineSpacing: parseFloat(document.getElementById('lineSpacing')?.value) || 1.2,
+        textAlign: document.getElementById('textAlign')?.value || 'center',
+        
+        // Per-line font sizes
+        lineFontSizes: Object.keys(lineFontSizes).length > 0 ? lineFontSizes : null,
+        
+        // PNG
+        pngExtrudeDepth: parseFloat(document.getElementById('pngExtrudeDepth')?.value) || 2,
+        pngTargetWidth: parseFloat(document.getElementById('pngTargetWidth')?.value) || 50,
+        
+        // SVG
+        svgExtrudeDepth: parseFloat(document.getElementById('svgExtrudeDepth')?.value) || 2,
+        
+        // Cutout
+        cornerRadius: parseFloat(document.getElementById('cornerRadius')?.value) || 6.0,
+        
+        // Ear/Hole
+        earEnabled: document.getElementById('earEnabled')?.value === 'true',
+        earSide: document.getElementById('earSide')?.value || 'left',
+        earPlacement: document.getElementById('earPlacement')?.value || 'side',
+        holeDiameter: parseFloat(document.getElementById('holeDiameter')?.value) || 4.0,
+        earRingThickness: parseFloat(document.getElementById('earRingThickness')?.value) || 3.0,
+        earAttachOverlap: parseFloat(document.getElementById('earAttachOverlap')?.value) || 2.0,
+        earYShift: parseFloat(document.getElementById('earYShift')?.value) || 0.0,
+        
+        // Colors
+        baseColor: document.getElementById('baseColor')?.value || '#ffffff',
+        textColor: document.getElementById('textColor')?.value || '#222222',
+    };
+}
+
+function applySettings(preset) {
+    // Text & Font (ไม่โหลด text เพื่อให้ผู้ใช้สามารถพิมพ์ชื่อใหม่ได้)
+    // text: ไม่โหลดเพื่อให้ผู้ใช้แก้ไขได้
+    if (preset.usePersonalFonts !== undefined) document.getElementById('usePersonalFonts').checked = preset.usePersonalFonts;
+    
+    // Style
+    if (preset.style !== undefined) document.getElementById('style').value = preset.style;
+    
+    // Size
+    if (preset.letterHeight !== undefined) document.getElementById('letterHeight').value = preset.letterHeight;
+    if (preset.baseHeight !== undefined) document.getElementById('baseHeight').value = preset.baseHeight;
+    if (preset.outline !== undefined) document.getElementById('outline').value = preset.outline;
+    if (preset.mmPerUnit !== undefined) document.getElementById('mmPerUnit').value = preset.mmPerUnit;
+    if (preset.totalWidth !== undefined && preset.totalWidth !== null) document.getElementById('totalWidth').value = preset.totalWidth;
+    if (preset.totalHeight !== undefined) document.getElementById('totalHeight').value = preset.totalHeight;
+    if (preset.letterSpacing !== undefined) document.getElementById('letterSpacing').value = preset.letterSpacing;
+    if (preset.textStroke !== undefined) document.getElementById('textStroke').value = preset.textStroke;
+    if (preset.lineSpacing !== undefined) document.getElementById('lineSpacing').value = preset.lineSpacing;
+    if (preset.textAlign !== undefined) document.getElementById('textAlign').value = preset.textAlign;
+    
+    // PNG
+    if (preset.pngExtrudeDepth !== undefined) document.getElementById('pngExtrudeDepth').value = preset.pngExtrudeDepth;
+    if (preset.pngTargetWidth !== undefined) document.getElementById('pngTargetWidth').value = preset.pngTargetWidth;
+    
+    // SVG
+    if (preset.svgExtrudeDepth !== undefined) document.getElementById('svgExtrudeDepth').value = preset.svgExtrudeDepth;
+    
+    // Cutout
+    if (preset.cornerRadius !== undefined) document.getElementById('cornerRadius').value = preset.cornerRadius;
+    
+    // Ear/Hole
+    if (preset.earEnabled !== undefined) document.getElementById('earEnabled').value = preset.earEnabled ? 'true' : 'false';
+    if (preset.earSide !== undefined) document.getElementById('earSide').value = preset.earSide;
+    if (preset.earPlacement !== undefined) document.getElementById('earPlacement').value = preset.earPlacement;
+    if (preset.holeDiameter !== undefined) document.getElementById('holeDiameter').value = preset.holeDiameter;
+    if (preset.earRingThickness !== undefined) document.getElementById('earRingThickness').value = preset.earRingThickness;
+    if (preset.earAttachOverlap !== undefined) document.getElementById('earAttachOverlap').value = preset.earAttachOverlap;
+    if (preset.earYShift !== undefined) document.getElementById('earYShift').value = preset.earYShift;
+    
+    // Colors
+    if (preset.baseColor !== undefined) document.getElementById('baseColor').value = preset.baseColor;
+    if (preset.textColor !== undefined) document.getElementById('textColor').value = preset.textColor;
+    
+    // Update UI first to create line font size inputs
+    updateLineFontSizeUI();
+    
+    // Per-line font sizes (ต้องทำหลัง updateLineFontSizeUI() เพื่อให้ input fields ถูกสร้างก่อน)
+    if (preset.lineFontSizes) {
+        // รอให้ DOM อัพเดทเสร็จก่อน (ใช้ setTimeout)
+        setTimeout(() => {
+            Object.keys(preset.lineFontSizes).forEach(index => {
+                const input = document.getElementById(`lineHeight${index}`);
+                if (input) {
+                    input.value = preset.lineFontSizes[index];
+                }
+            });
+        }, 50);
+    }
+}
+
+function savePreset(name, preset) {
+    const presets = JSON.parse(localStorage.getItem('nametag_presets') || '{}');
+    presets[name] = {
+        ...preset,
+        savedAt: new Date().toISOString()
+    };
+    localStorage.setItem('nametag_presets', JSON.stringify(presets));
+}
+
+function loadPreset(name) {
+    const presets = JSON.parse(localStorage.getItem('nametag_presets') || '{}');
+    return presets[name];
+}
+
+function deletePreset(name) {
+    const presets = JSON.parse(localStorage.getItem('nametag_presets') || '{}');
+    delete presets[name];
+    localStorage.setItem('nametag_presets', JSON.stringify(presets));
+}
+
+function loadPresetList() {
+    const presets = JSON.parse(localStorage.getItem('nametag_presets') || '{}');
+    const select = document.getElementById('presetSelect');
+    if (!select) return;
+    
+    // Clear existing options except first one
+    select.innerHTML = '<option value="">-- เลือก Preset --</option>';
+    
+    // Add presets
+    Object.keys(presets).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
 // ui-app.js — preview + STL export one-piece
 import * as THREE from 'https://esm.sh/three@0.168.0';
 import { OrbitControls } from 'https://esm.sh/three@0.168.0/examples/jsm/controls/OrbitControls.js';
@@ -1729,6 +1951,32 @@ document.querySelectorAll('.size-preset').forEach(btn => {
             }
         }
     });
+});
+
+// Auto-refresh preview when hole/ear settings change
+const earInputs = [
+    '#earEnabled',
+    '#earSide',
+    '#earPlacement',
+    '#holeDiameter',
+    '#earRingThickness',
+    '#earAttachOverlap',
+    '#earYShift'
+];
+
+earInputs.forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) {
+        element.addEventListener('change', async () => {
+            await refresh();
+        });
+        // สำหรับ input type number ให้ preview ทันทีเมื่อพิมพ์เสร็จ
+        if (element.type === 'number') {
+            element.addEventListener('input', async () => {
+                await refresh();
+            });
+        }
+    }
 });
 
 // ลบ auto-refresh เมื่อ input เปลี่ยนแปลง
