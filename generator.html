@@ -119,6 +119,17 @@
             <input id="font" type="file" accept=".ttf,.otf" />
             <div class="muted">เลือกจาก dropdown หรืออัพโหลดฟอนต์ของคุณเอง</div>
         </fieldset>
+        <fieldset>
+            <legend>เพิ่ม PNG ขาวดำ</legend>
+            <label>PNG ขาวดำ</label>
+            <input id="pngUpload" type="file" accept=".png" />
+            <label>Extrude Depth (mm)</label>
+            <input id="pngExtrudeDepth" type="number" value="2" step="0.1" />
+            <label>ขนาดจริง (mm)</label>
+            <input type="number" id="pngTargetWidth" value="50" min="1" step="0.1" placeholder="ขนาดจริง (mm)" />
+            <button id="addPngExtrude" class="btn secondary">เพิ่ม PNG ขาวดำ (ขนาด mm เท่าจริง)</button>
+            <div class="muted">อัปโหลด PNG ขาวดำเพื่อเพิ่มเป็นเลเยอร์ 3D โดยกำหนดขนาดจริง (mm)</div>
+        </fieldset>
         <fieldset style="display:none;">
             <legend>เพิ่ม SVG</legend>
             <label>SVG</label>
@@ -297,7 +308,7 @@
     <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
 
     <!-- แอพหลัก (ESM) -->
-    <script type="module" src="./ui-app.js"></script>
+    <script type="module" src="./generator-app.js"></script>
 </body>
 
 </html>
