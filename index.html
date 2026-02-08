@@ -16,6 +16,188 @@
     <!-- FontAwesome สำหรับไอคอน -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
+    <style>
+        /* Override for index.html only - compact layout */
+        aside {
+            min-width: 500px;
+            padding: 8px 10px;
+        }
+        
+        h1 {
+            font-size: 14px;
+            margin: 0 0 6px;
+        }
+        
+        fieldset {
+            padding: 6px 8px;
+            margin: 6px 0;
+            border-radius: 6px;
+        }
+        
+        legend {
+            font-size: 10px;
+            padding: 0 6px;
+        }
+        
+        label {
+            font-size: 10px;
+            margin: 3px 0 2px;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            padding: 3px 6px;
+            font-size: 10px;
+            margin-bottom: 3px;
+            border-radius: 4px;
+        }
+        
+        .btn {
+            padding: 4px 8px;
+            font-size: 10px;
+            gap: 4px;
+            border-radius: 4px;
+        }
+        
+        .btn.size-preset {
+            padding: 4px 6px;
+            min-width: 30px;
+            margin-left: 3px;
+        }
+        
+        .custom-select-selected {
+            padding: 3px 28px 3px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            background-size: 10px 10px;
+            background-position: right 6px center;
+        }
+        
+        .custom-select-wrapper {
+            margin-bottom: 3px;
+        }
+        
+        .muted {
+            font-size: 9px;
+            margin-top: 2px;
+        }
+        
+        .row {
+            gap: 4px;
+        }
+        
+        /* Remove inline styles */
+        main {
+            position: relative !important;
+        }
+        
+        #viewport-controls .btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            min-width: 50px;
+        }
+        
+        /* Override inline styles */
+        .row[style] {
+            margin-bottom: 4px !important;
+        }
+        
+        #msg[style] {
+            margin-top: 3px !important;
+        }
+        
+        h3[style] {
+            margin-top: 0 !important;
+            margin-bottom: 4px !important;
+            font-size: 0.9em !important;
+        }
+        
+        div[style*="margin-top"] {
+            margin-top: 4px !important;
+        }
+        
+        button[style*="margin-left"] {
+            margin-left: 3px !important;
+        }
+        
+        button[style*="padding"] {
+            padding: 4px 8px !important;
+            font-size: 10px !important;
+        }
+        
+        input[type="color"] {
+            width: 50px !important;
+            height: 25px !important;
+            padding: 2px !important;
+        }
+        
+        textarea {
+            padding: 4px 6px !important;
+            font-size: 10px !important;
+        }
+        
+        input[type="file"] {
+            font-size: 10px !important;
+        }
+        
+        input[type="checkbox"] {
+            margin-right: 4px;
+        }
+        
+        #lineFontSizeControls[style] {
+            margin-top: 4px !important;
+            padding: 4px !important;
+        }
+        
+        #layer-list-panel h3 {
+            font-size: 0.9em !important;
+            margin-bottom: 4px !important;
+        }
+        
+        .custom-select-items {
+            max-height: 250px;
+        }
+        
+        .custom-select-item {
+            padding: 4px 8px !important;
+            font-size: 10px !important;
+        }
+        
+        .font-preview-sample {
+            font-size: 12px !important;
+        }
+        
+        #presetSelect {
+            font-size: 10px !important;
+            padding: 3px 6px !important;
+        }
+        
+        #presetName {
+            font-size: 10px !important;
+            padding: 3px 6px !important;
+        }
+        
+        #dimText {
+            font-size: 10px;
+        }
+        
+        /* Grid adjustments */
+        body {
+            grid-template-columns: 60px 520px 1fr;
+        }
+        
+        /* ขนาดหลัก section - 3 columns */
+        #sizeSectionRaised .row {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        
+        /* รูแขวน section - 3 columns */
+        #earSection .row {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    </style>
 </head>
 
 <body>
@@ -150,28 +332,50 @@
                     <label>ความหนาฐาน (mm)</label>
                     <input id="baseHeight" type="number" value="2.0" step="0.1" />
                 </div>
+                <div>
+                    <label>ระยะห่างตัวอักษร (mm)</label>
+                    <input id="letterSpacing" type="number" step="1" value="0" />
+                </div>
             </div>
-            <label>ระยะขอบฐานรอบตัวอักษร (outline, mm)</label>
-            <input id="outline" type="number" value="4.0" step="0.1" />
-            <label>สเกล mm ต่อหน่วยฟอนต์ (MM_PER_UNIT)</label>
-            <input id="mmPerUnit" type="number" value="0.25" step="0.01" />
-            <label>ความกว้างรวม (mm) - เว้นว่างถ้าไม่สเกล</label>
-            <input id="totalWidth" type="number" placeholder="เช่น 100" step="0.1" />
-            <label>ความสูงรวม (mm) - เว้นว่างถ้าไม่สเกล</label>
-            <input id="totalHeight" type="number" value="13" step="0.1" />
             <div class="row">
                 <div>
-                    <label>ระยะห่างระหว่างตัวอักษร (mm)</label>
-                    <input id="letterSpacing" type="number" step="1" value="0" />
+                    <label>ระยะขอบฐาน (outline, mm)</label>
+                    <input id="outline" type="number" value="4.0" step="0.1" />
+                </div>
+                <div>
+                    <label>สเกล mm ต่อหน่วยฟอนต์</label>
+                    <input id="mmPerUnit" type="number" value="0.25" step="0.01" />
+                </div>
+                <div>
+                    <label>ความกว้างรวม (mm)</label>
+                    <input id="totalWidth" type="number" placeholder="เช่น 100" step="0.1" />
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    <label>ความสูงรวม (mm)</label>
+                    <input id="totalHeight" type="number" value="13" step="0.1" />
                 </div>
                 <div>
                     <label>ความหนาตัวอักษร (mm)</label>
                     <input id="textStroke" type="number" value="0" step="0.1" />
                 </div>
+                <div>
+                    <label>ระยะห่างบรรทัด</label>
+                    <input id="lineSpacing" type="number" value="1.2" min="0.5" max="3" step="0.1" />
+                </div>
             </div>
-            <label>ระยะห่างระหว่างบรรทัด (Line Spacing)</label>
-            <input id="lineSpacing" type="number" value="1.2" min="0.5" max="3" step="0.1" />
-            <div class="muted">เท่าของขนาดฟอนต์ (ค่าเริ่มต้น 1.2x)</div>
+            <div class="row">
+                <div>
+                    <label>การจัดตำแหน่งข้อความ</label>
+                    <select id="textAlign">
+                        <option value="left">ชิดซ้าย (Left)</option>
+                        <option value="center" selected>กึ่งกลาง (Center)</option>
+                        <option value="right">ชิดขวา (Right)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="muted">ระยะห่างบรรทัด: เท่าของขนาดฟอนต์ (ค่าเริ่มต้น 1.2x)</div>
             
             <!-- Dynamic line font size controls -->
             <div id="lineFontSizeControls" style="margin-top: 12px; padding: 12px; background: rgba(161,188,152,0.08); border-radius: 8px; border: 1px solid var(--line); display: none;">
@@ -179,13 +383,6 @@
                 <div id="lineFontSizeInputs"></div>
                 <span class="muted" style="font-size: 12px; display: block; margin-top: 8px;">💡 ปรับขนาดฟอนต์แยกสำหรับแต่ละบรรทัด (ตั้งค่าใน totalHeight จะถูกยกเลิก)</span>
             </div>
-            
-            <label>การจัดตำแหน่งข้อความ (Text Alignment)</label>
-            <select id="textAlign">
-                <option value="left">ชิดซ้าย (Left)</option>
-                <option value="center" selected>กึ่งกลาง (Center)</option>
-                <option value="right">ชิดขวา (Right)</option>
-            </select>
         </fieldset>
         <!-- <fieldset id="sizeSectionRaised" data-style="raised">
             
@@ -210,7 +407,7 @@
             </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="earSection">
 
             <legend>รูแขวน</legend>
 
@@ -222,7 +419,6 @@
                         <option value="false">ปิด</option>
                     </select>
                 </div>
-
                 <div>
                     <label>ด้าน</label>
                     <select id="earSide">
@@ -231,15 +427,13 @@
                         <option value="top">บน</option>
                     </select>
                 </div>
-            </div>
-            <!-- <div class="row">
-                    <div> -->
-            <label>ตำแหน่งรู</label>
-            <select id="earPlacement">
-                <option value="side" selected>นอกกรอบ (หูด้านข้าง)</option>
-                <option value="inside">ในกรอบ (เจาะภายใน)</option>
-            </select>
-            </div>
+                <div>
+                    <label>ตำแหน่งรู</label>
+                    <select id="earPlacement">
+                        <option value="side" selected>นอกกรอบ (หูด้านข้าง)</option>
+                        <option value="inside">ในกรอบ (เจาะภายใน)</option>
+                    </select>
+                </div>
             </div>
             <div class="row">
                 <div>
@@ -250,12 +444,12 @@
                     <label>เนื้อรอบรู (mm)</label>
                     <input id="earRingThickness" type="number" value="3.0" step="1" />
                 </div>
-            </div>
-            <div class="row">
                 <div>
                     <label>ซ้อนเข้าฐาน (mm)</label>
                     <input id="earAttachOverlap" type="number" value="2.0" step="1" />
                 </div>
+            </div>
+            <div class="row">
                 <div>
                     <label>เลื่อนแกน Y (mm)</label>
                     <input id="earYShift" type="number" value="0.0" step="1" />
@@ -273,7 +467,7 @@
         <div id="msg" class="muted" style="margin-top:8px"></div>
     </aside>
 
-    <main style="position:relative;">
+    <main>
         <canvas id="view"></canvas>
         <div id="layer-list-panel">
             <h3 style="margin-top:0;margin-bottom:12px;font-size:1.1em;color:var(--text-primary);font-weight:700;"><i class="fa fa-layer-group"></i> Layers</h3>
