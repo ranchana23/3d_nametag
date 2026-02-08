@@ -283,26 +283,6 @@
             </button>
         </div>
 
-        <fieldset style="margin-bottom:16px;">
-            <legend><i class="fa fa-save"></i> บันทึกค่าตั้ง</legend>
-            <label>เลือก Preset</label>
-            <select id="presetSelect" style="width:100%;margin-bottom:8px;">
-                <option value="">-- เลือก Preset --</option>
-            </select>
-            <div class="row" style="gap:8px;">
-                <input id="presetName" type="text" placeholder="ชื่อ Preset" style="flex:1;" />
-                <button id="savePreset" class="btn secondary" title="บันทึก Preset ใหม่">
-                    <i class="fa fa-save"></i> บันทึก
-                </button>
-                <button id="loadPreset" class="btn" title="โหลด Preset">
-                    <i class="fa fa-download"></i> โหลด
-                </button>
-                <button id="deletePreset" class="btn secondary" title="ลบ Preset" style="background:#dc3545;">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </div>
-        </fieldset>
-
         <fieldset>
             <legend>ข้อความ & ฟอนต์</legend>
             <label>ชื่อ (TEXT)</label>
@@ -399,6 +379,14 @@
                         <option value="right">ชิดขวา (Right)</option>
                     </select>
                 </div>
+                <div>
+                    <label>สีฐาน</label>
+                    <input id="baseColor" type="color" value="#ffffff" style="width:110px;height:35px;" />
+                </div>
+                <div>
+                    <label>สีตัวอักษร</label>
+                    <input id="textColor" type="color" value="#222222" style="width:110px;height:35px;" />
+                </div>
             </div>
             <div class="muted">ระยะห่างบรรทัด: เท่าของขนาดฟอนต์ (ค่าเริ่มต้น 1.2x)</div>
             
@@ -419,18 +407,6 @@
             <div class="muted">ขอบ/ระยะรอบข้อความ ใช้ค่าจาก “ระยะขอบฐานรอบตัวอักษร (outline)” ด้านบน</div>
         </fieldset>
 
-        <fieldset>
-            <div class="row">
-                <div>
-                    <label>สีฐาน</label>
-                    <input id="baseColor" type="color" value="#ffffff" style="width:110px;height:35px;" />
-                </div>
-                <div>
-                    <label>สีตัวอักษร</label>
-                    <input id="textColor" type="color" value="#222222" style="width:110px;height:35px;" />
-                </div>
-            </div>
-        </fieldset>
 
         <fieldset id="earSection">
 
@@ -479,6 +455,26 @@
                     <label>เลื่อนแกน Y (mm)</label>
                     <input id="earYShift" type="number" value="0.0" step="1" />
                 </div>
+            </div>
+        </fieldset>
+
+        <fieldset style="margin-bottom:16px;">
+            <legend><i class="fa fa-save"></i> บันทึกค่าตั้ง</legend>
+            <label>เลือก Preset</label>
+            <select id="presetSelect" style="width:100%;margin-bottom:8px;">
+                <option value="">-- เลือก Preset --</option>
+            </select>
+            <div class="row" style="gap:8px;">
+                <input id="presetName" type="text" placeholder="ชื่อ Preset" style="flex:1;" />
+                <button id="savePreset" class="btn secondary" title="บันทึก Preset ใหม่">
+                    <i class="fa fa-save"></i> บันทึก
+                </button>
+                <button id="loadPreset" class="btn" title="โหลด Preset">
+                    <i class="fa fa-download"></i> โหลด
+                </button>
+                <button id="deletePreset" class="btn secondary" title="ลบ Preset" style="background:#dc3545;">
+                    <i class="fa fa-trash"></i>
+                </button>
             </div>
         </fieldset>
 
