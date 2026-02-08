@@ -198,6 +198,11 @@
             grid-template-columns: 1fr 1fr 1fr;
         }
         
+        /* Size preset buttons - 3 columns */
+        .row:has(.size-preset) {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        
         /* ปรับสีปุ่มให้แตกต่างกัน */
         #preview {
             background: #2563eb !important;
@@ -261,17 +266,14 @@
     <aside>
         <h1><i class="fa fa-cogs"></i> Generator</h1>
         <div class="row" style="margin-bottom:16px;">
-            <button id="add" class="btn secondary">
-                <i class="fa fa-plus"></i> เพิ่ม
-            </button>
             <button id="exportSTL" class="btn" style="margin-left:8px;">
                 <i class="fa fa-download"></i> Export STL
             </button>
-        </div>
-        <div class="row" style="margin-bottom:16px;">
             <button id="preview" class="btn">
                 <i class="fa fa-eye"></i> Preview
             </button>
+        </div>
+        <div class="row" style="margin-bottom:16px;">
             <button class="btn secondary size-preset" data-size="10" title="Small - 10mm">
                 S
             </button>
@@ -480,6 +482,9 @@
 
         <div class="row">
             <input id="layerName" type="text" placeholder="Layer name" style="width:120px;margin-right:8px;" />
+            <button id="add" class="btn secondary">
+                <i class="fa fa-plus"></i> เพิ่ม
+            </button>
             <button id="exportSTLByLayer" class="btn">Export STL (แยกเลเยอร์)</button>
             <button id="export3MF" class="btn" style="margin-top:8px;">
                 <i class="fas fa-palette"></i> Export 3MF (Multi-Color)
