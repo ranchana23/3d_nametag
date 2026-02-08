@@ -1546,44 +1546,48 @@ function scaleToTargetHeight(baseGeom, textGeom, targetHeightMM) {
     const attr = mergedTemp.getAttribute('position');
     if (!attr) return;
 
-    const box = new THREE.Box3().setFromBufferAttribute(attr);
-    
-    // คำนวณความสูงจาก font metrics แทน bounding box
-    // ใช้ cap height หรือ ascender เพื่อวัดความสูงตัวอักษรหลัก (ไม่รวมสระบน-ล่าง)
     const c = cfg();
-    let currentHeight = box.max.y - box.min.y;
+    let currentHeight;
     
-    // ถ้ามี font และสามารถดึง metrics ได้
+    // ถ้ามี font ให้ใช้ cap height (ไม่รวมสระบน-ล่าง)
     if (window.currentFont) {
         const font = window.currentFont;
         const fontSize = 100; // ค่าเดียวกับที่ใช้ใน buildGeometries
         
-        // ใช้ ascender - descender เป็นความสูงมาตรฐานของฟอนต์
-        // แต่เราต้องการเฉพาะส่วนที่เป็นตัวอักษรหลัก (ไม่รวมสระบน-ล่าง)
-        // ใช้ cap height ถ้ามี หรือ ascender
-        let capHeight = 0;
+        // ใช้ x-height (ความสูงของตัวอักษรเล็ก เช่น x) หรือ cap height (ตัวพิมพ์ใหญ่)
+        // สำหรับภาษาไทย ใช้ x-height จะเหมาะสมกว่าเพราะเป็นความสูงของตัวอักษรหลักไม่รวมสระ
+        let referenceHeight = 0;
         
-        if (font.tables?.os2?.sCapHeight) {
+        if (font.tables?.os2?.sxHeight) {
+            // x-height จาก OS/2 table (ความสูงของตัวอักษรเล็กเช่น x)
+            referenceHeight = font.tables.os2.sxHeight;
+        } else if (font.tables?.os2?.sCapHeight) {
             // Cap height จาก OS/2 table (ความสูงของตัวพิมพ์ใหญ่)
-            capHeight = font.tables.os2.sCapHeight;
+            referenceHeight = font.tables.os2.sCapHeight;
         } else if (font.ascender) {
-            // ใช้ ascender แทน (ความสูงจากฐานถึงด้านบนสุดของตัวอักษร)
-            capHeight = font.ascender;
+            // ใช้ ascender แทน (โดยปกติจะสูงกว่าที่ควร แต่ดีกว่าไม่มี)
+            referenceHeight = font.ascender;
         }
         
-        if (capHeight > 0 && font.unitsPerEm) {
+        if (referenceHeight > 0 && font.unitsPerEm) {
             // แปลงจาก font units เป็น mm
-            const capHeightInMM = (capHeight / font.unitsPerEm) * fontSize * c.mmPerUnit;
-            currentHeight = capHeightInMM;
+            currentHeight = (referenceHeight / font.unitsPerEm) * fontSize * c.mmPerUnit;
+        } else {
+            // ถ้าหา metrics ไม่ได้ ใช้ bounding box
+            const box = new THREE.Box3().setFromBufferAttribute(attr);
+            currentHeight = box.max.y - box.min.y;
         }
+    } else {
+        // ถ้าไม่มี font ใช้ bounding box
+        const box = new THREE.Box3().setFromBufferAttribute(attr);
+        currentHeight = box.max.y - box.min.y;
     }
     
     if (currentHeight <= 0) return;
 
     const k = targetHeightMM / currentHeight;
 
-    // สเกลเฉพาะ Y กับ X เพื่อรักษสัดส่วนแกนอื่นๆ — เราสามารถเลือกสเกลเฉพาะแกน Y แต่
-    // เพื่อให้รูปไม่บิด เลือกสเกล X และ Y เท่ากัน
+    // สเกล X และ Y เท่ากันเพื่อรักษาสัดส่วน (ไม่สเกล Z เพื่อคงความหนา)
     baseGeom.scale(k, k, 1);
     if (textGeom?.attributes?.position?.count > 0) {
         textGeom.scale(k, k, 1);
