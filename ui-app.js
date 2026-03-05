@@ -1238,7 +1238,7 @@ async function buildGeometries() {
     if ((c.style || 'raised') === 'raised') {
         // ===== Raised (พฤติกรรมเดิม) =====
         const textGeom = new THREE.ExtrudeGeometry(letterShapesFU, {
-            depth: c.letterHeight, bevelEnabled: false, curveSegments: 24, steps: 1
+            depth: c.baseHeight + c.letterHeight, bevelEnabled: false, curveSegments: 24, steps: 1
         });
         textGeom.scale(c.mmPerUnit, -c.mmPerUnit, 1);
         textGeom.computeVertexNormals();
@@ -1339,7 +1339,8 @@ async function buildGeometries() {
         });
         baseGeom.scale(c.mmPerUnit, -c.mmPerUnit, 1);
         baseGeom.computeVertexNormals();
-        baseGeom.translate(0, 0, -c.baseHeight);
+        // ฐานเริ่มจาก z=0 ขึ้นไป c.baseHeight, ตัวอักษรเริ่มจาก z=c.baseHeight ขึ้นไป
+        // ไม่ translate เพื่อให้ฐานอยู่ที่ z>=0
 
         return { textGeom, baseGeom };
 
