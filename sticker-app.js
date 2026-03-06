@@ -14,7 +14,6 @@ const presetSelectedNameEl = document.getElementById('presetSelectedName');
 const presetSelectedSwatchesEl = document.getElementById('presetSelectedSwatches');
 const savePresetBtn = document.getElementById('savePreset');
 const updatePresetBtn = document.getElementById('updatePreset');
-const applyPresetBtn = document.getElementById('applyPreset');
 const deletePresetBtn = document.getElementById('deletePreset');
 const exportSVGBtn = document.getElementById('exportSVG');
 const stickerPreview = document.getElementById('stickerPreview');
@@ -28,6 +27,10 @@ const COLOR_PRESETS_STORAGE_KEY = 'stickerTextColorPresets';
 let fontBuffer = null;
 let opentypeFont = null;
 let currentSelectedPresetName = '';
+
+if (presetDropdownListEl && presetDropdownListEl.parentElement?.id === 'presetDropdownWrapper') {
+    document.body.appendChild(presetDropdownListEl);
+}
 
 function isLikelyFontBuffer(buf) {
     if (!buf || buf.byteLength < 4) return false;
@@ -111,6 +114,24 @@ function getActiveTextColors() {
     return colors.length ? colors : ['#000000'];
 }
 
+async function pickColorWithEyeDropper(inputEl) {
+    if (!window.EyeDropper) return false;
+
+    try {
+        const eyeDropper = new EyeDropper();
+        const result = await eyeDropper.open();
+        if (!result?.sRGBHex) return false;
+
+        inputEl.value = result.sRGBHex;
+        saveColorThemeToStorage();
+        await updatePreview();
+        return true;
+    } catch (e) {
+        // User cancel or API blocked; fallback handled by caller.
+        return false;
+    }
+}
+
 function saveColorThemeToStorage() {
     try {
         const payload = {
@@ -160,6 +181,26 @@ function renderTextColorInputs(seedColors = null) {
         input.type = 'color';
         input.id = 'textColor';
         input.value = previousColors[i] || DEFAULT_TEXT_COLORS[i] || '#000000';
+        input.addEventListener('click', async (e) => {
+            // Keep shade picker available: Ctrl/Cmd+click opens picker directly.
+            if (e.ctrlKey || e.metaKey) return;
+
+            if (!window.EyeDropper) return;
+
+            // Prefer eyedropper first when user clicks color input.
+            e.preventDefault();
+            const picked = await pickColorWithEyeDropper(input);
+
+            if (!picked && typeof input.showPicker === 'function') {
+                input.showPicker();
+            }
+        });
+        input.addEventListener('contextmenu', (e) => {
+            // Right-click to quickly open the native shade picker.
+            if (typeof input.showPicker !== 'function') return;
+            e.preventDefault();
+            input.showPicker();
+        });
         input.addEventListener('input', async () => {
             saveColorThemeToStorage();
             await updatePreview();
@@ -287,11 +328,12 @@ function renderPresetOptions(selectedName = '') {
 
         item.appendChild(title);
         item.appendChild(swatches);
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             setSelectedPreset(preset.name);
             presetNameEl.value = preset.name;
             presetDropdownListEl.style.display = 'none';
             presetSelectEl.classList.remove('active');
+            await applyPresetByName(preset.name);
         });
 
         presetDropdownListEl.appendChild(item);
@@ -757,15 +799,6 @@ updatePresetBtn.addEventListener('click', () => {
     presetNameEl.value = name;
     setSelectedPreset(name);
     MSG.textContent = `✅ แก้ไข preset: ${name}`;
-});
-
-applyPresetBtn.addEventListener('click', async () => {
-    const name = getSelectedPresetName() || presetNameEl.value.trim();
-    if (!name) {
-        MSG.textContent = '⚠️ เลือก preset ที่ต้องการใช้งาน';
-        return;
-    }
-    await applyPresetByName(name);
 });
 
 deletePresetBtn.addEventListener('click', () => {
