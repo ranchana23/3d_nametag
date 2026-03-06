@@ -4,10 +4,13 @@ import { SVGLoader } from 'https://esm.sh/three@0.168.0/examples/jsm/loaders/SVG
 const MSG = document.querySelector('#msg');
 const stickerTextEl = document.getElementById('stickerText');
 const fontSizeEl = document.getElementById('fontSize');
-const textColorEl = document.getElementById('textColor');
+const textColorCountEl = document.getElementById('textColorCount');
+const textColorContainerEl = document.getElementById('textColorContainer');
 const exportSVGBtn = document.getElementById('exportSVG');
 const stickerPreview = document.getElementById('stickerPreview');
 const stickerSvg = document.getElementById('stickerSvg');
+
+const DEFAULT_TEXT_COLORS = ['#000000', '#d32f2f', '#1976d2', '#388e3c', '#f57c00', '#7b1fa2'];
 
 // Font management
 let fontBuffer = null;
@@ -81,6 +84,46 @@ function toShapesFromSVG(svgString) {
     return shapes;
 }
 
+function getColorCount() {
+    const count = parseInt(textColorCountEl.value, 10);
+    if (!Number.isFinite(count)) return 4;
+    return Math.max(1, Math.min(6, count));
+}
+
+function getActiveTextColors() {
+    const colorInputs = textColorContainerEl.querySelectorAll('input[id="textColor"]');
+    const colors = Array.from(colorInputs)
+        .map(input => input.value)
+        .filter(Boolean);
+    return colors.length ? colors : ['#000000'];
+}
+
+function renderTextColorInputs() {
+    const targetCount = getColorCount();
+    textColorCountEl.value = String(targetCount);
+    const previousColors = getActiveTextColors();
+
+    textColorContainerEl.innerHTML = '';
+
+    for (let i = 0; i < targetCount; i++) {
+        const item = document.createElement('div');
+        item.className = 'color-input-item';
+
+        const label = document.createElement('span');
+        label.textContent = `${i + 1}`;
+
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.id = 'textColor';
+        input.value = previousColors[i] || DEFAULT_TEXT_COLORS[i] || '#000000';
+        input.addEventListener('input', updatePreview);
+
+        item.appendChild(label);
+        item.appendChild(input);
+        textColorContainerEl.appendChild(item);
+    }
+}
+
 // Generate SVG from text
 async function generateSVG() {
     if (!opentypeFont) {
@@ -95,7 +138,7 @@ async function generateSVG() {
     }
 
     const fontSize = parseFloat(fontSizeEl.value) || 36;
-    const textColor = textColorEl.value || '#000000';
+    const textColors = getActiveTextColors();
     const lines = text.split('\n');
 
     try {
@@ -103,6 +146,7 @@ async function generateSVG() {
         let yOffset = fontSize * 1.2;
         let maxWidth = 0;
         let totalHeight = 0;
+        let charColorIndex = 0;
 
         // Generate path for each line
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -113,6 +157,9 @@ async function generateSVG() {
 
             // Generate paths for each character in the line
             for (const char of line) {
+                const textColor = textColors[charColorIndex % textColors.length] || '#000000';
+                charColorIndex++;
+
                 try {
                     // Get glyph from font
                     const glyph = opentypeFont.charToGlyph(char);
@@ -258,6 +305,7 @@ async function populateFontDropdown() {
         // Dedupe and create options
         const seen = new Set();
         let fontIndex = 1;
+        let firstItem = null;
         for (const fontPath of fontPaths) {
             if (!fontPath || seen.has(fontPath)) continue;
             seen.add(fontPath);
@@ -291,6 +339,8 @@ async function populateFontDropdown() {
             item.style.fontFamily = `'${fontFamilyName}', 'Noto Sans Thai Looped', sans-serif`;
             item.dataset.value = fontPath;
             item.dataset.fontName = fileName;
+
+            if (!firstItem) firstItem = item;
 
             item.addEventListener('click', async () => {
                 // Remove previous selection
@@ -331,6 +381,11 @@ async function populateFontDropdown() {
             });
 
             listContainer.appendChild(item);
+        }
+
+        // Default to the first font in list (F01/P01) on initial load.
+        if (!currentSelectedValue && firstItem) {
+            firstItem.click();
         }
     }
 
@@ -394,12 +449,16 @@ document.getElementById('fontFile').addEventListener('change', async (e) => {
 // Event listeners
 stickerTextEl.addEventListener('input', updatePreview);
 fontSizeEl.addEventListener('change', updatePreview);
-textColorEl.addEventListener('input', updatePreview);
+textColorCountEl.addEventListener('input', async () => {
+    renderTextColorInputs();
+    await updatePreview();
+});
 exportSVGBtn.addEventListener('click', exportSVGFile);
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
     MSG.textContent = '⏳ กำลังโหลดฟอนต์...';
+    renderTextColorInputs();
     await loadDefaultFont();
     await populateFontDropdown();
     await updatePreview();
