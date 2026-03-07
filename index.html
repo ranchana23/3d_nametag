@@ -336,6 +336,12 @@
             <legend>ขนาดหลัก</legend>
             <div class="row">
                 <div>
+                    <label>
+                        <input type="checkbox" id="baseEnabled" checked />
+                        เปิดฐาน
+                    </label>
+                </div>
+                <div>
                     <label>ความสูงตัวอักษร (mm)</label>
                     <input id="letterHeight" type="number" value="1.0" step="0.1" />
                 </div>
@@ -343,12 +349,12 @@
                     <label>ความหนาฐาน (mm)</label>
                     <input id="baseHeight" type="number" value="2.0" step="0.1" />
                 </div>
+            </div>
+            <div class="row">
                 <div>
                     <label>ระยะห่างตัวอักษร (mm)</label>
                     <input id="letterSpacing" type="number" step="1" value="0" />
                 </div>
-            </div>
-            <div class="row">
                 <div>
                     <label>ระยะขอบฐาน (outline, mm)</label>
                     <input id="outline" type="number" value="4.0" step="0.1" />
@@ -357,12 +363,12 @@
                     <label>สเกล mm ต่อหน่วยฟอนต์</label>
                     <input id="mmPerUnit" type="number" value="0.25" step="0.01" />
                 </div>
+            </div>
+            <div class="row">
                 <div>
                     <label>ความกว้างรวม (mm)</label>
                     <input id="totalWidth" type="number" placeholder="เช่น 100" step="0.1" />
                 </div>
-            </div>
-            <div class="row">
                 <div>
                     <label>ความสูงรวม (mm)</label>
                     <input id="totalHeight" type="number" value="13" step="1" />
@@ -371,12 +377,12 @@
                     <label>ความหนาตัวอักษร (mm)</label>
                     <input id="textStroke" type="number" value="0" step="0.1" />
                 </div>
+            </div>
+            <div class="row">
                 <div>
                     <label>ระยะห่างบรรทัด</label>
                     <input id="lineSpacing" type="number" value="1.2" min="0.5" max="3" step="0.1" />
                 </div>
-            </div>
-            <div class="row">
                 <div>
                     <label>การจัดตำแหน่งข้อความ</label>
                     <select id="textAlign">
@@ -386,12 +392,18 @@
                     </select>
                 </div>
                 <div>
+                </div>
+            </div>
+            <div class="row">
+                <div>
                     <label>สีฐาน</label>
                     <input id="baseColor" type="color" value="#ffffff" style="width:110px;height:35px;" />
                 </div>
                 <div>
                     <label>สีตัวอักษร</label>
                     <input id="textColor" type="color" value="#222222" style="width:110px;height:35px;" />
+                </div>
+                <div>
                 </div>
             </div>
             <div class="muted">ระยะห่างบรรทัด: เท่าของขนาดฟอนต์ (ค่าเริ่มต้น 1.2x)</div>
@@ -420,11 +432,10 @@
 
             <div class="row">
                 <div>
-                    <label>เปิด/ปิด</label>
-                    <select id="earEnabled">
-                        <option value="true" selected>เปิด</option>
-                        <option value="false">ปิด</option>
-                    </select>
+                    <label>
+                        <input type="checkbox" id="earEnabled" checked />
+                        เปิดรูแขวน
+                    </label>
                 </div>
                 <div>
                     <label>ด้าน</label>

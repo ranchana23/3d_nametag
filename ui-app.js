@@ -173,6 +173,7 @@ function getCurrentSettings() {
         style: document.getElementById('style')?.value || 'raised',
         
         // Size
+        baseEnabled: document.getElementById('baseEnabled')?.checked ?? true,
         letterHeight: parseFloat(document.getElementById('letterHeight')?.value) || 1.0,
         baseHeight: parseFloat(document.getElementById('baseHeight')?.value) || 2.0,
         outline: parseFloat(document.getElementById('outline')?.value) || 4.0,
@@ -198,7 +199,7 @@ function getCurrentSettings() {
         cornerRadius: parseFloat(document.getElementById('cornerRadius')?.value) || 6.0,
         
         // Ear/Hole
-        earEnabled: document.getElementById('earEnabled')?.value === 'true',
+        earEnabled: document.getElementById('earEnabled')?.checked ?? true,
         earSide: document.getElementById('earSide')?.value || 'left',
         earPlacement: document.getElementById('earPlacement')?.value || 'side',
         holeDiameter: parseFloat(document.getElementById('holeDiameter')?.value) || 4.0,
@@ -221,6 +222,7 @@ function applySettings(preset) {
     if (preset.style !== undefined) document.getElementById('style').value = preset.style;
     
     // Size
+    if (preset.baseEnabled !== undefined) document.getElementById('baseEnabled').checked = preset.baseEnabled;
     if (preset.letterHeight !== undefined) document.getElementById('letterHeight').value = preset.letterHeight;
     if (preset.baseHeight !== undefined) document.getElementById('baseHeight').value = preset.baseHeight;
     if (preset.outline !== undefined) document.getElementById('outline').value = preset.outline;
@@ -243,7 +245,7 @@ function applySettings(preset) {
     if (preset.cornerRadius !== undefined) document.getElementById('cornerRadius').value = preset.cornerRadius;
     
     // Ear/Hole
-    if (preset.earEnabled !== undefined) document.getElementById('earEnabled').value = preset.earEnabled ? 'true' : 'false';
+    if (preset.earEnabled !== undefined) document.getElementById('earEnabled').checked = preset.earEnabled;
     if (preset.earSide !== undefined) document.getElementById('earSide').value = preset.earSide;
     if (preset.earPlacement !== undefined) document.getElementById('earPlacement').value = preset.earPlacement;
     if (preset.holeDiameter !== undefined) document.getElementById('holeDiameter').value = preset.holeDiameter;
@@ -529,13 +531,14 @@ function cfg() {
     return {
         style: document.querySelector('#style')?.value || 'raised',
         text: document.querySelector('#text').value || 'Ranchana',
+        baseEnabled: document.querySelector('#baseEnabled')?.checked ?? true,
         letterHeight: parseFloat(document.querySelector('#letterHeight').value) || 3.0,
         baseHeight: parseFloat(document.querySelector('#baseHeight').value) || 2.0,
         outline: parseFloat(document.querySelector('#outline').value) || 4.0,
         mmPerUnit: parseFloat(MM_PER_UNIT_INPUT.value) || 0.25,
         // รู
         earPlacement: document.querySelector('#earPlacement')?.value || 'side',
-        earEnabled: document.querySelector('#earEnabled').value === 'true',
+        earEnabled: document.querySelector('#earEnabled')?.checked ?? true,
         earSide: document.querySelector('#earSide').value,
         holeDiameter: parseFloat(document.querySelector('#holeDiameter').value) || 6.0,
         earRingThickness: parseFloat(document.querySelector('#earRingThickness').value) || 2.0,
@@ -1596,18 +1599,20 @@ async function refresh() {
         // helper: เช็คว่า geometry มีจุดจริงไหม
         const hasVerts = (g) => g && g.attributes && g.attributes.position && g.attributes.position.count > 0;
 
-        // สร้าง base mesh (ต้องมีเสมอ)
-        baseMesh = new THREE.Mesh(
-            baseGeom,
-            new THREE.MeshStandardMaterial({
-                color: new THREE.Color(c.baseColor),
-                metalness: 0.1,
-                roughness: 0.5,
-                emissive: new THREE.Color(c.baseColor),
-                emissiveIntensity: 0.15
-            })
-        );
-        scene.add(baseMesh);
+        // สร้าง base mesh (เฉพาะเมื่อ baseEnabled เป็น true)
+        if (c.baseEnabled && hasVerts(baseGeom)) {
+            baseMesh = new THREE.Mesh(
+                baseGeom,
+                new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(c.baseColor),
+                    metalness: 0.1,
+                    roughness: 0.5,
+                    emissive: new THREE.Color(c.baseColor),
+                    emissiveIntensity: 0.15
+                })
+            );
+            scene.add(baseMesh);
+        }
 
         // สำหรับ raised: มี textGeom; สำหรับ cutout: textGeom อาจว่าง -> ข้าม
         if (hasVerts(textGeom)) {
@@ -1626,7 +1631,7 @@ async function refresh() {
 
         // fit view (ใช้เฉพาะ mesh ที่มีอยู่จริง)
         const tempGroup = new THREE.Group();
-        tempGroup.add(baseMesh.clone());
+        if (baseMesh) tempGroup.add(baseMesh.clone());
         if (textMesh) tempGroup.add(textMesh.clone());
 
         const box = new THREE.Box3().setFromObject(tempGroup);
@@ -1926,8 +1931,9 @@ document.querySelectorAll('.size-preset').forEach(btn => {
     });
 });
 
-// Auto-refresh preview when hole/ear settings change
+// Auto-refresh preview when base/ear settings change
 const earInputs = [
+    '#baseEnabled',
     '#earEnabled',
     '#earSide',
     '#earPlacement',
